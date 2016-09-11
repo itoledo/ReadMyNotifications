@@ -89,6 +89,7 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
+    <Content Include="ComandosVoz.xml" />
     <Content Include="Language\Profiles\en.bin.gz" />
     <Content Include="Language\Profiles\es.bin.gz" />
     <None Include="project.json" />

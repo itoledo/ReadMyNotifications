@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
+using Windows.ApplicationModel.VoiceCommands;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
@@ -37,7 +40,7 @@ namespace ReadMyNotifications
         /// will be used such as when the application is launched to open a specific file.
         /// </summary>
         /// <param name="e">Details about the launch request and process.</param>
-        protected override void OnLaunched(LaunchActivatedEventArgs e)
+        protected override async void OnLaunched(LaunchActivatedEventArgs e)
         {
 #if DEBUG
             if (System.Diagnostics.Debugger.IsAttached)
@@ -65,6 +68,8 @@ namespace ReadMyNotifications
                 Window.Current.Content = rootFrame;
             }
 
+            await RegistrarComandosVoz();
+
             if (e.PrelaunchActivated == false)
             {
                 if (rootFrame.Content == null)
@@ -78,6 +83,26 @@ namespace ReadMyNotifications
                 Window.Current.Activate();
             }
         }
+
+        public async Task RegistrarComandosVoz()
+        {
+#if WINDOWS_PHONE_APP || WINDOWS_UWP
+            try
+            {
+                var storageFile =
+                    await
+                        Windows.Storage.StorageFile.GetFileFromApplicationUriAsync(new Uri("ms-appx:///ComandosVoz.xml"));
+                await
+                    VoiceCommandDefinitionManager.InstallCommandDefinitionsFromStorageFileAsync(
+                        storageFile);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("excepcion al cargar comandos de voz: " + ex.Message);
+            }
+#endif
+        }
+
 
         /// <summary>
         /// Invoked when Navigation to a certain page fails
