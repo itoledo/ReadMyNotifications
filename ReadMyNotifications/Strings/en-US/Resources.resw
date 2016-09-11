@@ -129,7 +129,7 @@
   <data name="NoNotifications" xml:space="preserve">
     <value>No notifications found.</value>
   </data>
-  <data name="Read.Content" xml:space="preserve">
-    <value>Read</value>
+  <data name="ReadButton.Content" xml:space="preserve">
+    <value>Read notifications</value>
   </data>
 </root>
