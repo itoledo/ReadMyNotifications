@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Background;
+using Windows.ApplicationModel.Resources;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Media.SpeechSynthesis;
@@ -34,10 +35,13 @@ namespace ReadMyNotifications
     {
         private UserNotificationListener _listener;
         private LanguageDetector _detector;
+        private ResourceLoader _l;
 
         public MainPage()
         {
             this.InitializeComponent();
+
+            _l = Windows.ApplicationModel.Resources.ResourceLoader.GetForCurrentView();
 
             this.Loaded += async (sender, args) => await Init();
         }
@@ -137,15 +141,14 @@ namespace ReadMyNotifications
                     // joining them together via newlines.
                     string bodyText = string.Join("\n", textElements.Skip(1).Select(t => t.Text));
 
-                    await Speak("from");
-                    await Speak(appDisplayName);
+                    await Speak(_l.GetString("From") + " " + appDisplayName);
                     await Speak($"{titleText}. {bodyText}");
                     cnt++;
                 }
             }
 
             if (cnt == 0)
-                await Reproducir("Nothing to read.");
+                await Reproducir(_l.GetString("NoNotifications"));
 
 //            _listener.ClearNotifications();
         }
@@ -218,11 +221,7 @@ namespace ReadMyNotifications
                 if (v == null)
                 {
                     _reproduciendo = false;
-                    await
-                        new MessageDialog(
-                            $"No voice installed for language {lang}, please install!"
-                            )
-                            .ShowAsync();
+                    await new MessageDialog(string.Format(_l.GetString("MissingLanguage"), tlang)).ShowAsync();
                     return;
                 }
             }
