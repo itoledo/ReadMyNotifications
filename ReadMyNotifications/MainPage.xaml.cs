@@ -137,7 +137,8 @@ namespace ReadMyNotifications
                     // joining them together via newlines.
                     string bodyText = string.Join("\n", textElements.Skip(1).Select(t => t.Text));
 
-                    await Speak($"from {appDisplayName}");
+                    await Speak("from");
+                    await Speak(appDisplayName);
                     await Speak($"{titleText}. {bodyText}");
                     cnt++;
                 }
@@ -146,7 +147,7 @@ namespace ReadMyNotifications
             if (cnt == 0)
                 await Reproducir("Nothing to read.");
 
-            _listener.ClearNotifications();
+//            _listener.ClearNotifications();
         }
 
         private async void Read_OnClick(object sender, RoutedEventArgs e)
