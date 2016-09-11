@@ -8,6 +8,7 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-
+        <Button Content="Read Notifications" Click="Read_OnClick"/>
+        <MediaElement x:Name="MediaElement"/>
     </Grid>
 </Page>
