@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en-US" target-language="es" original="READMYNOTIFICATIONS/STRINGS/EN-US/RESOURCES.RESW" tool-id="MultilingualAppToolkit" product-name="n/a" product-version="n/a" build-num="n/a">
+    <header>
+      <tool tool-id="MultilingualAppToolkit" tool-name="Multilingual App Toolkit" tool-version="4.0.1605.0" tool-company="Microsoft" />
+    </header>
+    <body>
+      <group id="READMYNOTIFICATIONS/STRINGS/EN-US/RESOURCES.RESW" datatype="resx">
+        <trans-unit id="AppTitle" translate="yes" xml:space="preserve">
+          <source>Read my Notifications</source>
+          <target state="translated">Lee mis Notificaciones</target>
+        </trans-unit>
+        <trans-unit id="From" translate="yes" xml:space="preserve">
+          <source>From</source>
+          <target state="translated">De</target>
+        </trans-unit>
+        <trans-unit id="MissingLanguage" translate="yes" xml:space="preserve">
+          <source>No voice installed for language {0}, please install!</source>
+          <target state="translated">No está instalada la voz para el lenguaje {0}, por favor instálala.</target>
+        </trans-unit>
+        <trans-unit id="NoNotifications" translate="yes" xml:space="preserve">
+          <source>No notifications found.</source>
+          <target state="translated">No hay notificaciones.</target>
+        </trans-unit>
+        <trans-unit id="ReadButton.Content" translate="yes" xml:space="preserve">
+          <source>Read notifications</source>
+          <target state="translated">Lee las notificaciones</target>
+        </trans-unit>
+      </group>
+    </body>
+  </file>
+</xliff>

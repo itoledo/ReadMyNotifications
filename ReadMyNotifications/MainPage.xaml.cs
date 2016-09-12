@@ -122,28 +122,42 @@ namespace ReadMyNotifications
                 string appDisplayName = notif.AppInfo.DisplayInfo.DisplayName;
 
                 // Get the app's logo
-                BitmapImage appLogo = new BitmapImage();
-                RandomAccessStreamReference appLogoStream = notif.AppInfo.DisplayInfo.GetLogo(new Size(16, 16));
-                await appLogo.SetSourceAsync(await appLogoStream.OpenReadAsync());
-
-                // Get the toast binding, if present
-                NotificationBinding toastBinding = notif.Notification.Visual.GetBinding(KnownNotificationBindings.ToastGeneric);
-
-                if (toastBinding != null)
+                try
                 {
-                    // And then get the text elements from the toast binding
-                    IReadOnlyList<AdaptiveNotificationText> textElements = toastBinding.GetTextElements();
+                    BitmapImage appLogo = new BitmapImage();
+                    RandomAccessStreamReference appLogoStream = notif.AppInfo.DisplayInfo.GetLogo(new Size(16, 16));
+                    await appLogo.SetSourceAsync(await appLogoStream.OpenReadAsync());
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine($"excepcion: app logo: {e}");
+                }
 
-                    // Treat the first text element as the title text
-                    string titleText = textElements.FirstOrDefault()?.Text;
+                try
+                {
+                    // Get the toast binding, if present
+                    NotificationBinding toastBinding = notif.Notification.Visual.GetBinding(KnownNotificationBindings.ToastGeneric);
 
-                    // We'll treat all subsequent text elements as body text,
-                    // joining them together via newlines.
-                    string bodyText = string.Join("\n", textElements.Skip(1).Select(t => t.Text));
+                    if (toastBinding != null)
+                    {
+                        // And then get the text elements from the toast binding
+                        IReadOnlyList<AdaptiveNotificationText> textElements = toastBinding.GetTextElements();
 
-                    await Speak(_l.GetString("From") + " " + appDisplayName);
-                    await Speak($"{titleText}. {bodyText}");
-                    cnt++;
+                        // Treat the first text element as the title text
+                        string titleText = textElements.FirstOrDefault()?.Text;
+
+                        // We'll treat all subsequent text elements as body text,
+                        // joining them together via newlines.
+                        string bodyText = string.Join("\n", textElements.Skip(1).Select(t => t.Text));
+
+                        await Speak(_l.GetString("From") + " " + appDisplayName);
+                        await Speak($"{titleText}. {bodyText}");
+                        cnt++;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine("excepcion: leer notif: {e}");
                 }
             }
 
