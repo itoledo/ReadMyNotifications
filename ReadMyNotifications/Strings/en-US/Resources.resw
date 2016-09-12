@@ -132,4 +132,7 @@
   <data name="ReadButton.Content" xml:space="preserve">
     <value>Read notifications</value>
   </data>
+  <data name="ReadEnd" xml:space="preserve">
+    <value>Finished reading your notifications.</value>
+  </data>
 </root>

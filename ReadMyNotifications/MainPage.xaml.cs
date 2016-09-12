@@ -157,12 +157,14 @@ namespace ReadMyNotifications
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine("excepcion: leer notif: {e}");
+                    Debug.WriteLine($"excepcion: leer notif: {e}");
                 }
             }
 
             if (cnt == 0)
                 await Reproducir(_l.GetString("NoNotifications"));
+            else
+                await Reproducir(_l.GetString("ReadEnd"));
 
 //            _listener.ClearNotifications();
         }

@@ -26,6 +26,10 @@
           <source>Read notifications</source>
           <target state="translated">Lee las notificaciones</target>
         </trans-unit>
+        <trans-unit id="ReadEnd" translate="yes" xml:space="preserve">
+          <source>Finished reading your notifications.</source>
+          <target state="translated">Terminé de leer tus notificaciones.</target>
+        </trans-unit>
       </group>
     </body>
   </file>
