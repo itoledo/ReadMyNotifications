@@ -27,4 +27,7 @@
   <data name="ReadButton.Content" xml:space="preserve">
     <value>Lee las notificaciones</value>
   </data>
+  <data name="ReadEnd" xml:space="preserve">
+    <value>Terminé de leer tus notificaciones.</value>
+  </data>
 </root>
