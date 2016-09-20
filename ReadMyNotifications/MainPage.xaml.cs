@@ -23,6 +23,8 @@ using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
 using ReadMyNotifications.Language;
+using Windows.UI.ViewManagement;
+using Windows.UI;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -44,6 +46,12 @@ namespace ReadMyNotifications
             _l = Windows.ApplicationModel.Resources.ResourceLoader.GetForCurrentView();
 
             this.Loaded += async (sender, args) => await Init();
+
+            var titleBar = ApplicationView.GetForCurrentView().TitleBar;
+            titleBar.BackgroundColor = Color.FromArgb(100, 14, 116, 230);
+            titleBar.ForegroundColor = Colors.White;
+            titleBar.ButtonBackgroundColor = Color.FromArgb(100, 14, 116, 230);
+            titleBar.ButtonForegroundColor = Colors.White;
         }
 
         public async Task Init()
@@ -307,6 +315,11 @@ namespace ReadMyNotifications
                 //else
                     await Reproducir(msg.Texto);
             }
+        }
+
+        private void HamburgerButton_Click(object sender, RoutedEventArgs e)
+        {
+            MySplitView.IsPaneOpen = !MySplitView.IsPaneOpen;
         }
     }
 }
