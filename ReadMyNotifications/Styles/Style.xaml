@@ -3,4 +3,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
    xmlns:local="using:ReadMyNotifications">
 
+    <Style x:Key="Text" BasedOn="{StaticResource BaseTextBlockStyle}" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="#FF000000"/>
+    </Style>
 </ResourceDictionary>

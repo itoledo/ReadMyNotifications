@@ -312,5 +312,24 @@ namespace ReadMyNotifications
         {
             MySplitView.IsPaneOpen = !MySplitView.IsPaneOpen;
         }
+
+        private void irPrincipal(object sender, TappedRoutedEventArgs e)
+        {
+            Frame.Navigate(typeof (MainPage));
+        }
+
+        private void irConfiguracion(object sender, TappedRoutedEventArgs e)
+        {
+            var f = new Frame();
+            MySplitView.Content = f;
+            f.Navigate(typeof(Configuracion));
+        }
+
+        private void irAcercaDe(object sender, TappedRoutedEventArgs e)
+        {
+            var f = new Frame();
+            MySplitView.Content = f;
+            f.Navigate(typeof(AcercaDe));
+        }
     }
 }
