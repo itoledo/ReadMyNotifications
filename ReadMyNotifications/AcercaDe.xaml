@@ -7,7 +7,12 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Background="White" Padding="20">
-        <TextBlock Text="Pantalla Acerca de" Style="{StaticResource Text}"></TextBlock>
-    </Grid>
+    <StackPanel Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Padding="20">
+        <TextBlock x:Uid="DevelopedBy">Developed by</TextBlock>
+        <Image Source="Assets\birdie_logo_v3.png" Width="200" HorizontalAlignment="Left" Margin="0,10,0,10"/>
+
+        <HyperlinkButton Content="Please review this app at the Windows Store!" NavigateUri="ms-windows-store://review/?ProductId=9nblggh525xl"/>
+        
+        <HyperlinkButton Content="Contact support" NavigateUri="mailto:soporte@birdie.cl"/>
+    </StackPanel>
 </Page>

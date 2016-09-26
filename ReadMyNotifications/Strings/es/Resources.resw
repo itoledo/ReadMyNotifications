@@ -30,4 +30,7 @@
   <data name="ReadEnd" xml:space="preserve">
     <value>Terminé de leer tus notificaciones.</value>
   </data>
+  <data name="DefaultVoice.Header" xml:space="preserve">
+    <value>Voz por defecto</value>
+  </data>
 </root>

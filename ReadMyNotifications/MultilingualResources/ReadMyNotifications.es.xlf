@@ -32,7 +32,23 @@
         </trans-unit>
         <trans-unit id="DefaultVoice.Header" translate="yes" xml:space="preserve">
           <source>Default voice</source>
-          <target state="new">Default voice</target>
+          <target state="translated">Voz por defecto</target>
+        </trans-unit>
+        <trans-unit id="PlayButton.Label" translate="yes" xml:space="preserve">
+          <source>Read all</source>
+          <target state="new">Read all</target>
+        </trans-unit>
+        <trans-unit id="StopButton.Label" translate="yes" xml:space="preserve">
+          <source>Stop</source>
+          <target state="new">Stop</target>
+        </trans-unit>
+        <trans-unit id="AutoLangHint.Text" translate="yes" xml:space="preserve">
+          <source>This will try to detect the language of each phrase, and select the voice that matches that language among all installed voices on the system.</source>
+          <target state="new">This will try to detect the language of each phrase, and select the voice that matches that language among all installed voices on the system.</target>
+        </trans-unit>
+        <trans-unit id="ToggleAutoLanguage.Header" translate="yes" xml:space="preserve">
+          <source>Automatic language detection</source>
+          <target state="new">Automatic language detection</target>
         </trans-unit>
       </group>
     </body>

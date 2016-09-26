@@ -40,8 +40,19 @@ namespace ReadMyNotifications
             var notif = e.AddedItems?[0] as Notificacion;
             if (notif != null)
             {
+                App.ViewModel.StopReading();
                 await App.ViewModel.ReadNotification(notif);
             }
+        }
+
+        private async void Read_OnClick(object sender, RoutedEventArgs e)
+        {
+            await App.ViewModel.ReadNotifications();
+        }
+
+        private void Stop_OnClick(object sender, RoutedEventArgs e)
+        {
+            App.ViewModel.StopReading();
         }
     }
 }

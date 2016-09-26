@@ -6,20 +6,26 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:viewModels="using:ReadMyNotifications.ViewModels"
+    xmlns:converters="using:MyToolkit.Converters"
     mc:Ignorable="d">
+    
+    <Page.Resources>
+        <converters:VisibilityConverter x:Key="VisibilityConverter" />
+        <converters:NotConverter x:Key="NotConverter"/>
+    </Page.Resources>
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <!--<RowDefinition Height="Auto"/>-->
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Button x:Uid="ReadButton" Click="{x:Bind ReadNotifications}" Background="#0e74e6" VerticalAlignment="Top" Margin="20" Width="200">
+        <!--<Button x:Uid="ReadButton" Click="{x:Bind ReadNotifications}" Background="#0e74e6" VerticalAlignment="Top" Margin="20" Width="200">
             <StackPanel Orientation="Horizontal">
                 <Image Source="Assets/iconReadNotifications.png" Height="62"/>
                 <TextBlock Text="Read Notifications"  VerticalAlignment="Center" Foreground="White" HorizontalAlignment="Center"/>
             </StackPanel>
-        </Button>
-        <ListView Grid.Row="1" ItemsSource="{Binding ListaNotificaciones}" SelectionChanged="Lista_OnSelectionChanged">
+        </Button>-->
+        <ListView Grid.Row="0" ItemsSource="{Binding ListaNotificaciones}" SelectionChanged="Lista_OnSelectionChanged">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
@@ -33,5 +39,13 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+        
     </Grid>
+
+    <Page.BottomAppBar>
+        <CommandBar>
+            <AppBarButton x:Uid="PlayButton" Icon="Play" Label="Read all" Click="Read_OnClick" Visibility="{Binding CanPlay, Converter={StaticResource VisibilityConverter}}"/>
+            <AppBarButton x:Uid="StopButton"  Icon="Stop" Label="Stop" Click="Stop_OnClick" Visibility="{Binding CanPlay, Converter={StaticResource NotConverter}}"/>
+        </CommandBar>
+    </Page.BottomAppBar>
 </Page>

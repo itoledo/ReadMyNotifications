@@ -32,6 +32,7 @@ namespace ReadMyNotifications.ViewModels
 
         private bool _deteccionAutomatica;
         public bool DeteccionAutomatica { get { return _deteccionAutomatica;} set { _deteccionAutomatica = value; SaveSettings(); RaisePropertyChanged(() => DeteccionAutomatica); } }
+
         private VoiceInformation _defaultVoice;
         public VoiceInformation DefaultVoice { get { return _defaultVoice;} set { _defaultVoice = value; SaveSettings(); RaisePropertyChanged(() => DefaultVoice); } }
 
@@ -45,17 +46,26 @@ namespace ReadMyNotifications.ViewModels
                 AllVoices.Add(v);
 
             ListaNotificaciones = new ObservableCollection<Notificacion>();
+            LoadSettings();
+        }
+
+        public void LoadSettings()
+        {
             if (settings.Values.ContainsKey("DefaultVoiceId"))
             {
                 string id = settings.Values["DefaultVoiceId"] as string;
                 if (!string.IsNullOrEmpty(id))
                 {
-                    var voz = (from VoiceInformation voice in SpeechSynthesizer.AllVoices where voice.Id.Equals(id) select voice).FirstOrDefault();
-                    DefaultVoice = voz;
+                    Debug.WriteLine($"ReadSetting: DefaultVoiceId: {id}");
+                    var voz = (from VoiceInformation voice in AllVoices where voice.Id.Equals(id) select voice).FirstOrDefault();
+                    _defaultVoice = voz;
                 }
             }
             if (settings.Values.ContainsKey("DeteccionAutomatica"))
-                DeteccionAutomatica = (bool) settings.Values["DeteccionAutomatica"];
+            {
+                _deteccionAutomatica = (bool)settings.Values["DeteccionAutomatica"];
+                Debug.WriteLine($"ReadSetting: DeteccionAutomatica: {DeteccionAutomatica}");
+            }
         }
 
         public void SaveSettings()
@@ -76,7 +86,6 @@ namespace ReadMyNotifications.ViewModels
             _detector = new LanguageDetector();
             await _detector.AddLanguages("es", "en");
         }
-
 
         public async Task CheckListenerAccess()
         {
@@ -210,9 +219,9 @@ namespace ReadMyNotifications.ViewModels
                 cnt++;
             }
             if (cnt == 0)
-                await Reproducir(_l.GetString("NoNotifications"));
+                await Speak(_l.GetString("NoNotifications"));
             else
-                await Reproducir(_l.GetString("ReadEnd"));
+                await Speak(_l.GetString("ReadEnd"));
         }
 
         public async Task ReadNotification(Notificacion n)
@@ -231,14 +240,14 @@ namespace ReadMyNotifications.ViewModels
 
         public List<Mensaje> Mensajes = new List<Mensaje>();
 
-        private bool _reproduciendo = false;
+        private bool _playing = false;
 
         public async Task Speak(string texto)
         {
             Debug.WriteLine("Speak: " + texto);
             // The media object for controlling and playing audio.
 
-            if (_reproduciendo == false && _currentMediaElement != null)
+            if (_playing == false && _currentMediaElement != null)
             {
                 await Reproducir(texto);
             }
@@ -249,6 +258,22 @@ namespace ReadMyNotifications.ViewModels
             }
         }
 
+        public bool CanPlay
+        {
+            get { return !_playing; } set { _playing = !value; RaisePropertyChanged(() => CanPlay); }
+        }
+
+        public void StopReading()
+        {
+            Mensajes.Clear();
+
+            if (_currentMediaElement != null)
+            {
+                _currentMediaElement.Stop();
+            }
+
+            CanPlay = true;
+        }
 
         public async Task Reproducir(string texto)
         {
@@ -260,38 +285,47 @@ namespace ReadMyNotifications.ViewModels
                 return;
             }
 
-            _reproduciendo = true;
+            CanPlay = false;
 
-            string lang = "en";
+            VoiceInformation v = null;
 
-            var tlang = _detector.Detect(texto);
-            if (!string.IsNullOrEmpty(tlang))
+            if (DeteccionAutomatica == true)
             {
-                Debug.WriteLine("lenguaje detectado: " + tlang);
-                lang = tlang;
-            }
+                string lang = "en";
 
-            var v =
-                (from VoiceInformation voice in SpeechSynthesizer.AllVoices
-                 where
-                     // (voice.Language.Equals("en-US") || voice.Language.Equals("en-GB"))
-                     voice.Language.StartsWith(lang) == true
-                 select voice).First();
-            if (v == null)
-            {
+                var tlang = _detector.Detect(texto);
+                if (!string.IsNullOrEmpty(tlang))
+                {
+                    Debug.WriteLine("lenguaje detectado: " + tlang);
+                    lang = tlang;
+                }
+
                 v =
-                    (from VoiceInformation voice in SpeechSynthesizer.AllVoices
-                     select voice).First();
+                (from VoiceInformation voice in SpeechSynthesizer.AllVoices
+                    where
+                    // (voice.Language.Equals("en-US") || voice.Language.Equals("en-GB"))
+                    voice.Language.StartsWith(lang) == true
+                    select voice).First();
                 if (v == null)
                 {
-                    _reproduciendo = false;
-                    await new MessageDialog(string.Format(_l.GetString("MissingLanguage"), tlang)).ShowAsync();
-                    return;
+                    v =
+                    (from VoiceInformation voice in SpeechSynthesizer.AllVoices
+                        select voice).First();
+                    if (v == null)
+                    {
+                        CanPlay = true;
+                        await new MessageDialog(string.Format(_l.GetString("MissingLanguage"), tlang)).ShowAsync();
+                        return;
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine("seleccionando voz " + v.DisplayName);
                 }
             }
             else
             {
-                Debug.WriteLine("seleccionando voz " + v.DisplayName);
+                v = DefaultVoice;
             }
 
             Debug.WriteLine("Generando Speech");
@@ -329,7 +363,7 @@ namespace ReadMyNotifications.ViewModels
         private async void MediaElementOnMediaEnded(object sender, RoutedEventArgs routedEventArgs)
         {
             Debug.WriteLine("MediaElementOnMediaEnded");
-            _reproduciendo = false;
+            CanPlay = true;
             await ProcesarCola();
         }
 

@@ -86,5 +86,10 @@ namespace ReadMyNotifications
             MySplitView.Content = f;
             f.Navigate(typeof(AcercaDe));
         }
+
+        private void Read_OnClick(object sender, RoutedEventArgs e)
+        {
+            
+        }
     }
 }

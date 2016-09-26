@@ -15,6 +15,7 @@
                 </DataTemplate>
             </ComboBox.ItemTemplate>
         </ComboBox>
-        <CheckBox Content="Automatic language detection" IsChecked="{Binding DeteccionAutomatica, Mode=TwoWay}"></CheckBox>
+        <ToggleSwitch x:Uid="ToggleAutoLanguage" Header="Automatic language detection" IsOn="{Binding DeteccionAutomatica, Mode=TwoWay}"/>
+        <TextBlock x:Uid="AutoLangHint" Text="This will try to detect the language of each phrase, and select the voice that matches that language among all installed voices on the system." FontWeight="ExtraLight" TextWrapping="WrapWholeWords"/>
     </StackPanel>
 </Page>

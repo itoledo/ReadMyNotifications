@@ -26,6 +26,7 @@ namespace ReadMyNotifications
         public Configuracion()
         {
             this.InitializeComponent();
+            this.DataContext = App.ViewModel;
         }
     }
 }

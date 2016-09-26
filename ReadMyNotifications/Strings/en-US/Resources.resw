@@ -120,6 +120,9 @@
   <data name="AppTitle" xml:space="preserve">
     <value>Read my Notifications</value>
   </data>
+  <data name="AutoLangHint.Text" xml:space="preserve">
+    <value>This will try to detect the language of each phrase, and select the voice that matches that language among all installed voices on the system.</value>
+  </data>
   <data name="DefaultVoice.Header" xml:space="preserve">
     <value>Default voice</value>
   </data>
@@ -132,10 +135,19 @@
   <data name="NoNotifications" xml:space="preserve">
     <value>No notifications found.</value>
   </data>
+  <data name="PlayButton.Label" xml:space="preserve">
+    <value>Read all</value>
+  </data>
   <data name="ReadButton.Content" xml:space="preserve">
     <value>Read notifications</value>
   </data>
   <data name="ReadEnd" xml:space="preserve">
     <value>Finished reading your notifications.</value>
+  </data>
+  <data name="StopButton.Label" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="ToggleAutoLanguage.Header" xml:space="preserve">
+    <value>Automatic language detection</value>
   </data>
 </root>
