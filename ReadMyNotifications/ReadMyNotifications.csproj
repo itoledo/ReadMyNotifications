@@ -98,6 +98,13 @@
     <Content Include="ComandosVoz.xml" />
     <Content Include="Language\Profiles\en.bin.gz" />
     <Content Include="Language\Profiles\es.bin.gz" />
+    <None Include="Language\Profiles\de.bin.gz" />
+    <None Include="Language\Profiles\fr.bin.gz" />
+    <None Include="Language\Profiles\it.bin.gz" />
+    <None Include="Language\Profiles\ja.bin.gz" />
+    <None Include="Language\Profiles\pt.bin.gz" />
+    <None Include="Language\Profiles\zh-cn.bin.gz" />
+    <None Include="Language\Profiles\zh-tw.bin.gz" />
     <None Include="project.json" />
     <PRIResource Include="Strings\es\Resources.resw" />
     <PRIResource Include="Strings\en-US\Resources.resw" />

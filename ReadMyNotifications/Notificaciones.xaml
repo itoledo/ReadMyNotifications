@@ -19,7 +19,7 @@
                 <TextBlock Text="Read Notifications"  VerticalAlignment="Center" Foreground="White" HorizontalAlignment="Center"/>
             </StackPanel>
         </Button>
-        <ListView Grid.Row="1" ItemsSource="{Binding ListaNotificaciones}">
+        <ListView Grid.Row="1" ItemsSource="{Binding ListaNotificaciones}" SelectionChanged="Lista_OnSelectionChanged">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
@@ -27,7 +27,7 @@
                         <StackPanel Orientation="Vertical">
                             <TextBlock Text="{Binding AppName}" FontWeight="ExtraBold"/>
                             <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
-                            <TextBlock Text="{Binding Text}" FontWeight="Light"/>
+                            <TextBlock Text="{Binding Text}" FontWeight="Light" TextWrapping="WrapWholeWords"/>
                         </StackPanel>
                     </StackPanel>
                 </DataTemplate>

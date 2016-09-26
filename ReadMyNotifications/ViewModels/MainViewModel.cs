@@ -174,14 +174,20 @@ namespace ReadMyNotifications.ViewModels
             int cnt = 0;
             foreach (var n in ListaNotificaciones)
             {
-                await Speak(_l.GetString("From") + " " + n.AppName);
-                await Speak($"{n.Title}. {n.Text}");
+                await ReadNotification(n);
                 cnt++;
             }
             if (cnt == 0)
                 await Reproducir(_l.GetString("NoNotifications"));
             else
                 await Reproducir(_l.GetString("ReadEnd"));
+        }
+
+        public async Task ReadNotification(Notificacion n)
+        {
+            // _l.GetString("From") + " " + 
+            await Speak(n.AppName);
+            await Speak($"{n.Title}. {n.Text}");
         }
 
         public class Mensaje

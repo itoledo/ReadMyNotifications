@@ -12,6 +12,7 @@ using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
+using ReadMyNotifications.ViewModels;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=234238
 
@@ -32,6 +33,15 @@ namespace ReadMyNotifications
         public async void ReadNotifications()
         {
             await App.ViewModel.ReadNotifications();
+        }
+
+        private async void Lista_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var notif = e.AddedItems?[0] as Notificacion;
+            if (notif != null)
+            {
+                await App.ViewModel.ReadNotification(notif);
+            }
         }
     }
 }
