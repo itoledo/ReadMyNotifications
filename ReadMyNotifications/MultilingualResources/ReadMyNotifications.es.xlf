@@ -30,6 +30,10 @@
           <source>Finished reading your notifications.</source>
           <target state="translated">Terminé de leer tus notificaciones.</target>
         </trans-unit>
+        <trans-unit id="DefaultVoice.Header" translate="yes" xml:space="preserve">
+          <source>Default voice</source>
+          <target state="new">Default voice</target>
+        </trans-unit>
       </group>
     </body>
   </file>

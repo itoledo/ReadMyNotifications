@@ -28,11 +28,43 @@ namespace ReadMyNotifications.ViewModels
         private LanguageDetector _detector;
         private ResourceLoader _l;
         public ObservableCollection<Notificacion> ListaNotificaciones { get; private set; }
+        public ObservableCollection<VoiceInformation> AllVoices { get; private set; }
+
+        private bool _deteccionAutomatica;
+        public bool DeteccionAutomatica { get { return _deteccionAutomatica;} set { _deteccionAutomatica = value; SaveSettings(); RaisePropertyChanged(() => DeteccionAutomatica); } }
+        private VoiceInformation _defaultVoice;
+        public VoiceInformation DefaultVoice { get { return _defaultVoice;} set { _defaultVoice = value; SaveSettings(); RaisePropertyChanged(() => DefaultVoice); } }
+
+        Windows.Storage.ApplicationDataContainer settings = Windows.Storage.ApplicationData.Current.LocalSettings;
 
         public MainViewModel()
         {
+            AllVoices = new ObservableCollection<VoiceInformation>();
+            var voces = from VoiceInformation voice in SpeechSynthesizer.AllVoices select voice;
+            foreach (var v in voces)
+                AllVoices.Add(v);
+
             ListaNotificaciones = new ObservableCollection<Notificacion>();
+            if (settings.Values.ContainsKey("DefaultVoiceId"))
+            {
+                string id = settings.Values["DefaultVoiceId"] as string;
+                if (!string.IsNullOrEmpty(id))
+                {
+                    var voz = (from VoiceInformation voice in SpeechSynthesizer.AllVoices where voice.Id.Equals(id) select voice).FirstOrDefault();
+                    DefaultVoice = voz;
+                }
+            }
+            if (settings.Values.ContainsKey("DeteccionAutomatica"))
+                DeteccionAutomatica = (bool) settings.Values["DeteccionAutomatica"];
         }
+
+        public void SaveSettings()
+        {
+            settings.Values["DeteccionAutomatica"] = DeteccionAutomatica;
+            if (DefaultVoice != null)
+                settings.Values["DefaultVoiceId"] = DefaultVoice.Id;
+        }
+
         public async Task Init(MediaElement mediaElement)
         {
             _l = Windows.ApplicationModel.Resources.ResourceLoader.GetForCurrentView();

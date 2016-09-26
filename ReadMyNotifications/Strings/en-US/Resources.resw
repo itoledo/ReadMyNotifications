@@ -120,6 +120,9 @@
   <data name="AppTitle" xml:space="preserve">
     <value>Read my Notifications</value>
   </data>
+  <data name="DefaultVoice.Header" xml:space="preserve">
+    <value>Default voice</value>
+  </data>
   <data name="From" xml:space="preserve">
     <value>From</value>
   </data>
