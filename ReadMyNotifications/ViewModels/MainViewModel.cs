@@ -104,8 +104,7 @@ namespace ReadMyNotifications.ViewModels
         {
             // Get the toast notifications
             IReadOnlyList<UserNotification> notifs = await _listener.GetNotificationsAsync(NotificationKinds.Toast);
-
-            ListaNotificaciones.Clear();
+            var lista = new List<Notificacion>();
 
             foreach (var notif in notifs)
             {
@@ -148,7 +147,7 @@ namespace ReadMyNotifications.ViewModels
                             // joining them together via newlines.
                             string bodyText = string.Join("\n", textElements.Skip(1).Select(t => t.Text));
                             n.Text = bodyText;
-                            ListaNotificaciones.Add(n);
+                            lista.Add(n);
                         }
                     }
                     catch (Exception e)
@@ -162,7 +161,12 @@ namespace ReadMyNotifications.ViewModels
                     Debug.WriteLine($"excepcion: base: {e}");
                 }
             }
-            //            _listener.ClearNotifications();
+            lock (ListaNotificaciones)
+            {
+                ListaNotificaciones.Clear();
+                foreach (var n in lista)
+                    ListaNotificaciones.Add(n);
+            }
         }
 
         public async Task ReadNotifications()

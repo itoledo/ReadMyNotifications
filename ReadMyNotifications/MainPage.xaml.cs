@@ -51,6 +51,16 @@ namespace ReadMyNotifications
             titleBar.ButtonForegroundColor = Colors.White;
         }
 
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            if (e.Parameter != null && e.Parameter.Equals("read"))
+            {
+                await App.ViewModel.GetNotifications();
+                await App.ViewModel.ReadNotifications();
+            }
+        }
+
         private void HamburgerButton_Click(object sender, RoutedEventArgs e)
         {
             MySplitView.IsPaneOpen = !MySplitView.IsPaneOpen;

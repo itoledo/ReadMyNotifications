@@ -130,5 +130,43 @@ namespace ReadMyNotifications
             //TODO: Save application state and stop any background activity
             deferral.Complete();
         }
+
+        protected override void OnActivated(IActivatedEventArgs args)
+        {
+            base.OnActivated(args);
+            Frame rootFrame = Window.Current.Content as Frame;
+
+            var navigationToPageType = typeof(MainPage);
+            string navigationCommand = null;
+
+            if (args.Kind == ActivationKind.VoiceCommand)
+            {
+                VoiceCommandActivatedEventArgs voiceArgs = (VoiceCommandActivatedEventArgs)args;
+                if (voiceArgs.Result.RulePath.ToList().Contains("Read"))
+                {
+                    navigationCommand = "read";
+                }
+            }
+
+            if (rootFrame == null)
+            {
+                // Create a Frame to act as the navigation context and navigate to the first page
+                rootFrame = new Frame();
+
+                rootFrame.NavigationFailed += OnNavigationFailed;
+
+                // Place the frame in the current Window
+                Window.Current.Content = rootFrame;
+            }
+
+            // Since we're expecting to always show a details page, navigate even if 
+            // a content frame is in place (unlike OnLaunched).
+            // Navigate to either the main trip list page, or if a valid voice command
+            // was provided, to the details page for that trip.
+            rootFrame.Navigate(navigationToPageType, navigationCommand);
+
+            // Ensure the current window is active
+            Window.Current.Activate();
+        }
     }
 }
