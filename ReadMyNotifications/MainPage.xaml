@@ -5,6 +5,7 @@
     xmlns:local="using:ReadMyNotifications"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    RequestedTheme="Light"
     mc:Ignorable="d">
 
     <!--<Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
@@ -15,6 +16,7 @@
                CompactPaneLength="50"  OpenPaneLength="180">
         <SplitView.Pane>
             <StackPanel Background="#0e74e6">
+                <MediaElement x:Name="MediaElement"/>
                 <Button x:Name="HamburgerButton" FontFamily="Segoe MDL2 Assets" Content="&#xE700;"
                     Width="50" Height="50" Background="Transparent" Click="HamburgerButton_Click"/>
                                 
@@ -59,20 +61,7 @@
             </StackPanel>
         </SplitView.Pane>
         <SplitView.Content>
-            <Grid Background="White">
-              
-                    <!--<Image Source="Assets/iconReadNotifications.png" Height="50"></Image>-->
-                    <!--<Button x:Uid="ReadButton" Content="Read Notifications" Click="Read_OnClick"/>-->
-                    
-                    <Button x:Uid="ReadButton" Click="Read_OnClick" Background="#0e74e6" VerticalAlignment="Top" Margin="20" Width="200">
-                        <StackPanel Orientation="Horizontal">
-                            <Image Source="Assets/iconReadNotifications.png" Height="62"/>
-                            <TextBlock Text="Read Notifications"  VerticalAlignment="Center" Foreground="White" HorizontalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
-                    <MediaElement x:Name="MediaElement"/>
-               
-            </Grid>
+            <local:Notificaciones />
         </SplitView.Content>
     </SplitView>
 </Page>
