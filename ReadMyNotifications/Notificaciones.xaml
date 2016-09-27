@@ -28,14 +28,18 @@
         <ListView Grid.Row="0" ItemsSource="{Binding ListaNotificaciones}" SelectionChanged="Lista_OnSelectionChanged">
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Orientation="Horizontal">
+                    <Grid Margin="12,12,12,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
                         <Image Source="{Binding Logo}" Width="64" Height="64" Margin="0,0,10,10" VerticalAlignment="Top" HorizontalAlignment="Left"/>
-                        <StackPanel Orientation="Vertical">
+                        <StackPanel Orientation="Vertical" Grid.Column="1">
                             <TextBlock Text="{Binding AppName}" FontWeight="ExtraBold"/>
                             <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
                             <TextBlock Text="{Binding Text}" FontWeight="Light" TextWrapping="WrapWholeWords"/>
                         </StackPanel>
-                    </StackPanel>
+                    </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
@@ -46,6 +50,7 @@
         <CommandBar>
             <AppBarButton x:Uid="PlayButton" Icon="Play" Label="Read all" Click="Read_OnClick" Visibility="{Binding CanPlay, Converter={StaticResource VisibilityConverter}}"/>
             <AppBarButton x:Uid="StopButton"  Icon="Stop" Label="Stop" Click="Stop_OnClick" Visibility="{Binding CanPlay, Converter={StaticResource NotConverter}}"/>
+            <AppBarButton x:Uid="ReloadButton"  Icon="Refresh" Label="Reload" Click="Reload_OnClick" />
         </CommandBar>
     </Page.BottomAppBar>
 </Page>

@@ -50,6 +50,22 @@
           <source>Automatic language detection</source>
           <target state="new">Automatic language detection</target>
         </trans-unit>
+        <trans-unit id="Cancel" translate="yes" xml:space="preserve">
+          <source>Cancel</source>
+          <target state="new">Cancel</target>
+        </trans-unit>
+        <trans-unit id="NeedsPermission" translate="yes" xml:space="preserve">
+          <source>This app needs permission to read your notifications. It cannot work otherwise.</source>
+          <target state="new">This app needs permission to read your notifications. It cannot work otherwise.</target>
+        </trans-unit>
+        <trans-unit id="Retry" translate="yes" xml:space="preserve">
+          <source>Retry</source>
+          <target state="new">Retry</target>
+        </trans-unit>
+        <trans-unit id="RetryPermission" translate="yes" xml:space="preserve">
+          <source>We need permission to read your notifications.</source>
+          <target state="new">We need permission to read your notifications.</target>
+        </trans-unit>
       </group>
     </body>
   </file>

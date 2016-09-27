@@ -18,6 +18,7 @@
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <PackageCertificateKeyFile>ReadMyNotifications_StoreKey.pfx</PackageCertificateKeyFile>
     <PackageCertificateThumbprint>D45AB84F3A5C916FC4664416D8C06DCCDA548A6F</PackageCertificateThumbprint>
+    <HockeyAppResourceId>1b73ec47435844f3b00c28e67b048c75</HockeyAppResourceId>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
@@ -109,6 +110,7 @@
     <None Include="project.json" />
     <None Include="ReadMyNotifications_StoreKey.pfx" />
     <None Include="ReadMyNotifications_TemporaryKey.pfx" />
+    <None Include="Service References\HockeyApp\ConnectedService.json" />
     <PRIResource Include="Strings\es\Resources.resw" />
     <PRIResource Include="Strings\en-US\Resources.resw" />
   </ItemGroup>
@@ -178,6 +180,9 @@
   </ItemGroup>
   <ItemGroup>
     <XliffResource Include="MultilingualResources\ReadMyNotifications.es.xlf" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>

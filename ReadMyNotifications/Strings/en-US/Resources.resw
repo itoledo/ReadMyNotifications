@@ -123,6 +123,9 @@
   <data name="AutoLangHint.Text" xml:space="preserve">
     <value>This will try to detect the language of each phrase, and select the voice that matches that language among all installed voices on the system.</value>
   </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
   <data name="DefaultVoice.Header" xml:space="preserve">
     <value>Default voice</value>
   </data>
@@ -131,6 +134,9 @@
   </data>
   <data name="MissingLanguage" xml:space="preserve">
     <value>No voice installed for language {0}, please install!</value>
+  </data>
+  <data name="NeedsPermission" xml:space="preserve">
+    <value>This app needs permission to read your notifications. It cannot work otherwise.</value>
   </data>
   <data name="NoNotifications" xml:space="preserve">
     <value>No notifications found.</value>
@@ -143,6 +149,12 @@
   </data>
   <data name="ReadEnd" xml:space="preserve">
     <value>Finished reading your notifications.</value>
+  </data>
+  <data name="Retry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="RetryPermission" xml:space="preserve">
+    <value>We need permission to read your notifications.</value>
   </data>
   <data name="StopButton.Label" xml:space="preserve">
     <value>Stop</value>

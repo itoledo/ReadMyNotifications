@@ -57,15 +57,25 @@ namespace ReadMyNotifications.ViewModels
                 if (!string.IsNullOrEmpty(id))
                 {
                     Debug.WriteLine($"ReadSetting: DefaultVoiceId: {id}");
-                    var voz = (from VoiceInformation voice in AllVoices where voice.Id.Equals(id) select voice).FirstOrDefault();
-                    _defaultVoice = voz;
+                    var voz =
+                        (from VoiceInformation voice in AllVoices where voice.Id.Equals(id) select voice).FirstOrDefault
+                            ();
+                    if (voz == null)
+                        _defaultVoice = (from v in AllVoices where v.Id == SpeechSynthesizer.DefaultVoice.Id select v).FirstOrDefault();
+                    else
+                        _defaultVoice = voz;
                 }
             }
+            else
+                _defaultVoice = (from v in AllVoices where v.Id == SpeechSynthesizer.DefaultVoice.Id select v).FirstOrDefault();
+
             if (settings.Values.ContainsKey("DeteccionAutomatica"))
             {
-                _deteccionAutomatica = (bool)settings.Values["DeteccionAutomatica"];
+                _deteccionAutomatica = (bool) settings.Values["DeteccionAutomatica"];
                 Debug.WriteLine($"ReadSetting: DeteccionAutomatica: {DeteccionAutomatica}");
             }
+            else
+                _deteccionAutomatica = true;
         }
 
         public void SaveSettings()
@@ -77,17 +87,40 @@ namespace ReadMyNotifications.ViewModels
 
         public async Task Init(MediaElement mediaElement)
         {
+            _detector = new LanguageDetector();
+            await _detector.AddLanguages("es", "en");
+
             _l = Windows.ApplicationModel.Resources.ResourceLoader.GetForCurrentView();
 
             await ActivarMediaElement(mediaElement);
 
-            await CheckListenerAccess();
-
-            _detector = new LanguageDetector();
-            await _detector.AddLanguages("es", "en");
+            switch (await CheckListenerAccess())
+            {
+                case 0:
+                    break;
+                case 1:
+                    await new MessageDialog(_l.GetString("NeedsPermission")).ShowAsync();
+                    break;
+                case -1:
+                    var dlg = new MessageDialog(_l.GetString("RetryPermission"));
+                    dlg.Commands.Add(new UICommand(_l.GetString("Retry")));
+                    dlg.Commands.Add(new UICommand(_l.GetString("Cancel")));
+                    bool hecho = false;
+                    while (hecho == false)
+                    {
+                        var ret = await dlg.ShowAsync();
+                        if (ret.Label.Equals(_l.GetString("Retry")))
+                        {
+                            var ok = await CheckListenerAccess();
+                            if (ok == 1)
+                                await new MessageDialog(_l.GetString("NeedsPermission")).ShowAsync();
+                        }
+                    }
+                    break;
+            }
         }
 
-        public async Task CheckListenerAccess()
+        public async Task<int> CheckListenerAccess()
         {
             // Get the listener
             _listener = UserNotificationListener.Current;
@@ -101,7 +134,7 @@ namespace ReadMyNotifications.ViewModels
                 case UserNotificationListenerAccessStatus.Allowed:
                     //RegisterBackground();
                     // Yay! Proceed as normal
-                    break;
+                    return 0;
 
                 // This means the user has denied access.
                 // Any further calls to RequestAccessAsync will instantly
@@ -111,7 +144,7 @@ namespace ReadMyNotifications.ViewModels
 
                     // Show UI explaining that listener features will not
                     // work until user allows access.
-                    break;
+                    return 1;
 
                 // This means the user closed the prompt without
                 // selecting either allow or deny. Further calls to
@@ -119,8 +152,10 @@ namespace ReadMyNotifications.ViewModels
                 case UserNotificationListenerAccessStatus.Unspecified:
 
                     // Show UI that allows the user to bring up the prompt again
-                    break;
+                    return -1;
             }
+
+            return -1;
         }
 
         public void RegisterBackground()
@@ -188,7 +223,10 @@ namespace ReadMyNotifications.ViewModels
                             // joining them together via newlines.
                             string bodyText = string.Join("\n", textElements.Skip(1).Select(t => t.Text));
                             n.Text = bodyText;
-                            lista.Add(n);
+
+                            // sólo si tiene algún texto
+                            if (!string.IsNullOrEmpty(bodyText) || !string.IsNullOrEmpty(titleText))
+                                lista.Add(n);
                         }
                     }
                     catch (Exception e)
