@@ -33,4 +33,44 @@
   <data name="DefaultVoice.Header" xml:space="preserve">
     <value>Voz por defecto</value>
   </data>
+  <data name="PlayButton.Label" xml:space="preserve">
+    <value>Leer todo</value>
+  </data>
+  <data name="StopButton.Label" xml:space="preserve">
+    <value>Detener</value>
+  </data>
+  <data name="AutoLangHint.Text" xml:space="preserve">
+    <value>Esto intentará detectar el lenguaje de cada frase, y seleccionará la voz instalada en tu sistema que calce con ese lenguaje.
+</value>
+  </data>
+  <data name="ToggleAutoLanguage.Header" xml:space="preserve">
+    <value>Detección automática de idioma</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="NeedsPermission" xml:space="preserve">
+    <value>Esta aplicación necesita permiso para leer tus notificaciones, no funcionará de otra forma.</value>
+  </data>
+  <data name="Retry" xml:space="preserve">
+    <value>Reintentar</value>
+  </data>
+  <data name="RetryPermission" xml:space="preserve">
+    <value>Necesitamos permiso para leer tus notificaciones.</value>
+  </data>
+  <data name="ReloadButton.Content" xml:space="preserve">
+    <value>Recargar</value>
+  </data>
+  <data name="ContactSupport.Content" xml:space="preserve">
+    <value>Contacta a soporte</value>
+  </data>
+  <data name="DevelopedBy.Text" xml:space="preserve">
+    <value>Desarrollado por</value>
+  </data>
+  <data name="PleaseReview.Content" xml:space="preserve">
+    <value>Por favor califica esta app en la Tienda de Windows!</value>
+  </data>
+  <data name="Webpage.Content" xml:space="preserve">
+    <value>Visita nuestra página web</value>
+  </data>
 </root>
