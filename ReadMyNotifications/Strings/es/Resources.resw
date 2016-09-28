@@ -58,9 +58,6 @@
   <data name="RetryPermission" xml:space="preserve">
     <value>Necesitamos permiso para leer tus notificaciones.</value>
   </data>
-  <data name="ReloadButton.Content" xml:space="preserve">
-    <value>Recargar</value>
-  </data>
   <data name="ContactSupport.Content" xml:space="preserve">
     <value>Contacta a soporte</value>
   </data>
@@ -72,5 +69,11 @@
   </data>
   <data name="Webpage.Content" xml:space="preserve">
     <value>Visita nuestra página web</value>
+  </data>
+  <data name="NoVoiceInstalled" xml:space="preserve">
+    <value>No hay una voz predeterminada en tu dispositivo. Lanzando la app de Configuración.</value>
+  </data>
+  <data name="ReloadButton.Label" xml:space="preserve">
+    <value>Recargar</value>
   </data>
 </root>

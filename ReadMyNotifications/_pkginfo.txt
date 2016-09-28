@@ -1,1 +1,1 @@
-c:\devel\git\ReadMyNotifications\ReadMyNotifications\AppPackages\ReadMyNotifications_1.1.0.0\ReadMyNotifications_1.1.0.0_x86_x64_arm.appxbundle
+C:\devel\git\ReadMyNotifications\ReadMyNotifications\AppPackages\ReadMyNotifications_1.1.1.0\ReadMyNotifications_1.1.1.0_x86_x64_arm.appxbundle

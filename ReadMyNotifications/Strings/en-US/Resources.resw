@@ -162,7 +162,7 @@
   <data name="ReadEnd" xml:space="preserve">
     <value>Finished reading your notifications.</value>
   </data>
-  <data name="ReloadButton.Content" xml:space="preserve">
+  <data name="ReloadButton.Label" xml:space="preserve">
     <value>Reload</value>
   </data>
   <data name="Retry" xml:space="preserve">

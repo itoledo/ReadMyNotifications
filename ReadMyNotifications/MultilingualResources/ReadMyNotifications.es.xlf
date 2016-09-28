@@ -67,10 +67,6 @@
           <source>We need permission to read your notifications.</source>
           <target state="translated">Necesitamos permiso para leer tus notificaciones.</target>
         </trans-unit>
-        <trans-unit id="ReloadButton.Content" translate="yes" xml:space="preserve">
-          <source>Reload</source>
-          <target state="translated">Recargar</target>
-        </trans-unit>
         <trans-unit id="ContactSupport.Content" translate="yes" xml:space="preserve">
           <source>Contact support</source>
           <target state="translated">Contacta a soporte</target>
@@ -89,7 +85,11 @@
         </trans-unit>
         <trans-unit id="NoVoiceInstalled" translate="yes" xml:space="preserve">
           <source>There is no default voice in your device settings. Launching the Voice Settings app.</source>
-          <target state="new">There is no default voice in your device settings. Launching the Voice Settings app.</target>
+          <target state="translated">No hay una voz predeterminada en tu dispositivo. Lanzando la app de Configuración.</target>
+        </trans-unit>
+        <trans-unit id="ReloadButton.Label" translate="yes" xml:space="preserve">
+          <source>Reload</source>
+          <target state="translated">Recargar</target>
         </trans-unit>
       </group>
     </body>
