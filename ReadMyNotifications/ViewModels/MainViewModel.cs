@@ -138,9 +138,6 @@ namespace ReadMyNotifications.ViewModels
 
         public async Task Init(MediaElement mediaElement)
         {
-            _detector = new LanguageDetector();
-            await _detector.AddLanguages("es", "en");
-
             _l = Windows.ApplicationModel.Resources.ResourceLoader.GetForCurrentView();
 
             await ActivarMediaElement(mediaElement);
@@ -169,7 +166,6 @@ namespace ReadMyNotifications.ViewModels
                     }
                     break;
             }
-            await CheckListenerAccess();
 
             _detector = new LanguageDetector();
             await _detector.AddLanguages("es", "en", "de", "fr", "it", "ja", "pt", "zh-cn", "zh-tw");
