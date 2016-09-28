@@ -86,16 +86,20 @@ namespace ReadMyNotifications.ViewModels
         {
             if (SpeechSynthesizer.DefaultVoice == null)
             {
-                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
-                async () =>
-                {
-                    await new MessageDialog(_l.GetString("NoVoiceInstalled")).ShowAsync();
-                    await Launcher.LaunchUriAsync(new Uri("ms-settings:speech"));
-                });
+                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
+                    CoreDispatcherPriority.Normal,
+                    async () =>
+                    {
+                        await new MessageDialog(_l.GetString("NoVoiceInstalled")).ShowAsync();
+                        await Launcher.LaunchUriAsync(new Uri("ms-settings:speech"));
+                    });
                 return;
             }
             // busquémoslo en la lista de voces.
-            var voz = (from VoiceInformation voice in AllVoices where voice.Id.Equals(SpeechSynthesizer.DefaultVoice.Id) select voice).FirstOrDefault();
+            var voz =
+            (from VoiceInformation voice in AllVoices
+                where voice.Id.Equals(SpeechSynthesizer.DefaultVoice.Id)
+                select voice).FirstOrDefault();
             if (voz == null)
                 _defaultVoice = SpeechSynthesizer.DefaultVoice;
             else
@@ -110,7 +114,9 @@ namespace ReadMyNotifications.ViewModels
                 if (!string.IsNullOrEmpty(id))
                 {
                     Debug.WriteLine($"ReadSetting: DefaultVoiceId: {id}");
-                    var voz = (from VoiceInformation voice in AllVoices where voice.Id.Equals(id) select voice).FirstOrDefault();
+                    var voz =
+                        (from VoiceInformation voice in AllVoices where voice.Id.Equals(id) select voice).FirstOrDefault
+                            ();
                     if (voz != null)
                         _defaultVoice = voz;
                     else
@@ -118,7 +124,9 @@ namespace ReadMyNotifications.ViewModels
                 }
             }
             else
-                _defaultVoice = (from v in AllVoices where v.Id == SpeechSynthesizer.DefaultVoice.Id select v).FirstOrDefault();
+                SetDefaultVoice();
+                //_defaultVoice =
+                //    (from v in AllVoices where v.Id == SpeechSynthesizer.DefaultVoice.Id select v).FirstOrDefault();
 
             if (settings.Values.ContainsKey("DeteccionAutomatica"))
             {
@@ -163,6 +171,8 @@ namespace ReadMyNotifications.ViewModels
                             if (ok == 1)
                                 await new MessageDialog(_l.GetString("NeedsPermission")).ShowAsync();
                         }
+                        else
+                            hecho = true;
                     }
                     break;
             }
@@ -227,75 +237,125 @@ namespace ReadMyNotifications.ViewModels
             }
         }
 
+        private Boolean _getting = false;
+
+        public Boolean Getting
+        {
+            get { return _getting; }
+            set
+            {
+                _getting = value;
+                RaisePropertyChanged(() => Getting);
+            }
+        }
+
         public async Task GetNotifications()
         {
-            // Get the toast notifications
-            IReadOnlyList<UserNotification> notifs = await _listener.GetNotificationsAsync(NotificationKinds.Toast);
-            var lista = new List<Notificacion>();
-
-            foreach (var notif in notifs)
+            if (_getting == true)
             {
-                var n = new Notificacion();
+                Debug.WriteLine("skipping");
+                return;
+            }
+
+            Getting = true;
+
+            try
+            {
+                IReadOnlyList<UserNotification> notifs;
+                // Get the toast notifications
                 try
                 {
-                    // Get the app's display name
-                    string appDisplayName = notif.AppInfo.DisplayInfo.DisplayName;
-                    n.AppName = appDisplayName;
-
-                    // Get the app's logo
-                    try
-                    {
-                        BitmapImage appLogo = new BitmapImage();
-                        RandomAccessStreamReference appLogoStream = notif.AppInfo.DisplayInfo.GetLogo(new Size(64, 64));
-                        await appLogo.SetSourceAsync(await appLogoStream.OpenReadAsync());
-                        n.Logo = appLogo;
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine($"excepcion: app logo: {e}");
-                    }
-
-                    try
-                    {
-                        // Get the toast binding, if present
-                        NotificationBinding toastBinding =
-                            notif.Notification.Visual.GetBinding(KnownNotificationBindings.ToastGeneric);
-
-                        if (toastBinding != null)
-                        {
-                            // And then get the text elements from the toast binding
-                            IReadOnlyList<AdaptiveNotificationText> textElements = toastBinding.GetTextElements();
-
-                            // Treat the first text element as the title text
-                            string titleText = textElements.FirstOrDefault()?.Text;
-                            n.Title = titleText;
-
-                            // We'll treat all subsequent text elements as body text,
-                            // joining them together via newlines.
-                            string bodyText = string.Join("\n", textElements.Skip(1).Select(t => t.Text));
-                            n.Text = bodyText;
-
-                            // sólo si tiene algún texto
-                            if (!string.IsNullOrEmpty(bodyText) || !string.IsNullOrEmpty(titleText))
-                                lista.Add(n);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine($"excepcion: leer notif: {e}");
-                    }
-
+                    _listener = UserNotificationListener.Current;
+                    notifs = await _listener.GetNotificationsAsync(NotificationKinds.Toast);
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine($"excepcion: base: {e}");
+                    Debug.WriteLine($"excepcion: {e}");
+                    notifs = null;
+                }
+
+                if (notifs == null)
+                {
+                    await new MessageDialog(_l.GetString("ErrorGet")).ShowAsync();
+                    return;
+                }
+
+                var lista = new List<Notificacion>();
+
+                foreach (var notif in notifs)
+                {
+                    var n = new Notificacion();
+                    try
+                    {
+                        // Get the app's display name
+                        string appDisplayName = notif.AppInfo.DisplayInfo.DisplayName;
+                        n.AppName = appDisplayName;
+
+                        // Get the app's logo
+                        try
+                        {
+                            BitmapImage appLogo = new BitmapImage();
+                            RandomAccessStreamReference appLogoStream =
+                                notif.AppInfo.DisplayInfo.GetLogo(new Size(64, 64));
+                            await appLogo.SetSourceAsync(await appLogoStream.OpenReadAsync());
+                            n.Logo = appLogo;
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.WriteLine($"excepcion: app logo: {e}");
+                        }
+
+                        try
+                        {
+                            // Get the toast binding, if present
+                            NotificationBinding toastBinding =
+                                notif.Notification.Visual.GetBinding(KnownNotificationBindings.ToastGeneric);
+
+                            if (toastBinding != null)
+                            {
+                                // And then get the text elements from the toast binding
+                                IReadOnlyList<AdaptiveNotificationText> textElements = toastBinding.GetTextElements();
+
+                                // Treat the first text element as the title text
+                                string titleText = textElements.FirstOrDefault()?.Text;
+                                n.Title = titleText;
+
+                                // We'll treat all subsequent text elements as body text,
+                                // joining them together via newlines.
+                                string bodyText = string.Join("\n", textElements.Skip(1).Select(t => t.Text));
+                                n.Text = bodyText;
+
+                                // sólo si tiene algún texto
+                                if (!string.IsNullOrEmpty(bodyText) || !string.IsNullOrEmpty(titleText))
+                                    lista.Add(n);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.WriteLine($"excepcion: leer notif: {e}");
+                        }
+
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine($"excepcion: base: {e}");
+                    }
+                }
+                lock (ListaNotificaciones)
+                {
+                    ListaNotificaciones.Clear();
+                    foreach (var n in lista)
+                        ListaNotificaciones.Add(n);
                 }
             }
-            lock (ListaNotificaciones)
+            catch (Exception e)
             {
-                ListaNotificaciones.Clear();
-                foreach (var n in lista)
-                    ListaNotificaciones.Add(n);
+                // ???
+                Debug.WriteLine($"excepción general: {e}");
+            }
+            finally
+            {
+                Getting = false;
             }
         }
 

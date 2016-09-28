@@ -25,6 +25,8 @@
                 <TextBlock Text="Read Notifications"  VerticalAlignment="Center" Foreground="White" HorizontalAlignment="Center"/>
             </StackPanel>
         </Button>-->
+        
+        
         <ListView Grid.Row="0" ItemsSource="{Binding ListaNotificaciones}" SelectionChanged="Lista_OnSelectionChanged">
             <ListView.ItemTemplate>
                 <DataTemplate>
@@ -36,13 +38,15 @@
                         <Image Source="{Binding Logo}" Width="64" Height="64" Margin="0,0,10,10" VerticalAlignment="Top" HorizontalAlignment="Left"/>
                         <StackPanel Orientation="Vertical" Grid.Column="1">
                             <TextBlock Text="{Binding AppName}" FontWeight="ExtraBold"/>
-                            <TextBlock Text="{Binding Title}" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding Title}" FontWeight="Bold" TextWrapping="WrapWholeWords"/>
                             <TextBlock Text="{Binding Text}" FontWeight="Light" TextWrapping="WrapWholeWords"/>
                         </StackPanel>
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+        
+        <ProgressRing Width="100" Height="100" HorizontalAlignment="Center" VerticalAlignment="Center" IsActive="{Binding Getting}" />
         
     </Grid>
 

@@ -76,4 +76,7 @@
   <data name="ReloadButton.Label" xml:space="preserve">
     <value>Recargar</value>
   </data>
+  <data name="ErrorGet" xml:space="preserve">
+    <value>Ocurrió un error al obtener tus notificaciones, por favor reintenta en unos momentos.</value>
+  </data>
 </root>

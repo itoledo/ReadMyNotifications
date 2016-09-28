@@ -19,7 +19,7 @@
     <PackageCertificateKeyFile>ReadMyNotifications_StoreKey.pfx</PackageCertificateKeyFile>
     <PackageCertificateThumbprint>D45AB84F3A5C916FC4664416D8C06DCCDA548A6F</PackageCertificateThumbprint>
     <HockeyAppResourceId>1b73ec47435844f3b00c28e67b048c75</HockeyAppResourceId>
-    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <AppxBundle>Always</AppxBundle>
     <AppxBundlePlatforms>x86|x64|arm</AppxBundlePlatforms>
   </PropertyGroup>

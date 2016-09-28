@@ -135,6 +135,9 @@
   <data name="DevelopedBy.Text" xml:space="preserve">
     <value>Developed by</value>
   </data>
+  <data name="ErrorGet" xml:space="preserve">
+    <value>There has been an error getting your notifications, please try again.</value>
+  </data>
   <data name="From" xml:space="preserve">
     <value>From</value>
   </data>
