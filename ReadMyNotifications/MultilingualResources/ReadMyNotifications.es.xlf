@@ -50,6 +50,10 @@
           <source>Automatic language detection</source>
           <target state="new">Automatic language detection</target>
         </trans-unit>
+        <trans-unit id="NoVoiceInstalled" translate="yes" xml:space="preserve">
+          <source>There is no default voice in your device settings. Launching the Voice Settings app.</source>
+          <target state="new">There is no default voice in your device settings. Launching the Voice Settings app.</target>
+        </trans-unit>
       </group>
     </body>
   </file>

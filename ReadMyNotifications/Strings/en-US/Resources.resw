@@ -135,6 +135,9 @@
   <data name="NoNotifications" xml:space="preserve">
     <value>No notifications found.</value>
   </data>
+  <data name="NoVoiceInstalled" xml:space="preserve">
+    <value>There is no default voice in your device settings. Launching the Voice Settings app.</value>
+  </data>
   <data name="PlayButton.Label" xml:space="preserve">
     <value>Read all</value>
   </data>

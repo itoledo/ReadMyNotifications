@@ -10,6 +10,8 @@ using Windows.ApplicationModel.Resources;
 using Windows.Foundation;
 using Windows.Media.SpeechSynthesis;
 using Windows.Storage.Streams;
+using Windows.System;
+using Windows.UI.Core;
 using Windows.UI.Notifications;
 using Windows.UI.Notifications.Management;
 using Windows.UI.Popups;
@@ -31,22 +33,73 @@ namespace ReadMyNotifications.ViewModels
         public ObservableCollection<VoiceInformation> AllVoices { get; private set; }
 
         private bool _deteccionAutomatica;
-        public bool DeteccionAutomatica { get { return _deteccionAutomatica;} set { _deteccionAutomatica = value; SaveSettings(); RaisePropertyChanged(() => DeteccionAutomatica); } }
+
+        public bool DeteccionAutomatica
+        {
+            get { return _deteccionAutomatica; }
+            set
+            {
+                _deteccionAutomatica = value;
+                SaveSettings();
+                RaisePropertyChanged(() => DeteccionAutomatica);
+            }
+        }
 
         private VoiceInformation _defaultVoice;
-        public VoiceInformation DefaultVoice { get { return _defaultVoice;} set { _defaultVoice = value; SaveSettings(); RaisePropertyChanged(() => DefaultVoice); } }
+
+        public VoiceInformation DefaultVoice
+        {
+            get { return _defaultVoice; }
+            set
+            {
+                _defaultVoice = value;
+                SaveSettings();
+                RaisePropertyChanged(() => DefaultVoice);
+            }
+        }
 
         Windows.Storage.ApplicationDataContainer settings = Windows.Storage.ApplicationData.Current.LocalSettings;
 
         public MainViewModel()
         {
             AllVoices = new ObservableCollection<VoiceInformation>();
-            var voces = from VoiceInformation voice in SpeechSynthesizer.AllVoices select voice;
-            foreach (var v in voces)
-                AllVoices.Add(v);
+            try
+            {
+                if (SpeechSynthesizer.AllVoices != null)
+                {
+                    var voces = from VoiceInformation voice in SpeechSynthesizer.AllVoices select voice;
+                    foreach (var v in voces)
+                        AllVoices.Add(v);
+                }
+            }
+            catch (Exception ex)
+            {
+                // para prevenir cualquier error de init
+                Debug.WriteLine($"excepcion en ctx: {ex}");
+            }
 
             ListaNotificaciones = new ObservableCollection<Notificacion>();
             LoadSettings();
+        }
+
+        public void SetDefaultVoice()
+        {
+            if (SpeechSynthesizer.DefaultVoice == null)
+            {
+                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+                async () =>
+                {
+                    await new MessageDialog(_l.GetString("NoVoiceInstalled")).ShowAsync();
+                    await Launcher.LaunchUriAsync(new Uri("ms-settings:speech"));
+                });
+                return;
+            }
+            // busquémoslo en la lista de voces.
+            var voz = (from VoiceInformation voice in AllVoices where voice.Id.Equals(SpeechSynthesizer.DefaultVoice.Id) select voice).FirstOrDefault();
+            if (voz == null)
+                _defaultVoice = SpeechSynthesizer.DefaultVoice;
+            else
+                _defaultVoice = voz;
         }
 
         public void LoadSettings()
@@ -58,7 +111,10 @@ namespace ReadMyNotifications.ViewModels
                 {
                     Debug.WriteLine($"ReadSetting: DefaultVoiceId: {id}");
                     var voz = (from VoiceInformation voice in AllVoices where voice.Id.Equals(id) select voice).FirstOrDefault();
-                    _defaultVoice = voz;
+                    if (voz != null)
+                        _defaultVoice = voz;
+                    else
+                        SetDefaultVoice();
                 }
             }
             if (settings.Values.ContainsKey("DeteccionAutomatica"))
@@ -84,7 +140,7 @@ namespace ReadMyNotifications.ViewModels
             await CheckListenerAccess();
 
             _detector = new LanguageDetector();
-            await _detector.AddLanguages("es", "en");
+            await _detector.AddLanguages("es", "en", "de", "fr", "it", "ja", "pt", "zh-cn", "zh-tw");
         }
 
         public async Task CheckListenerAccess()
@@ -291,36 +347,23 @@ namespace ReadMyNotifications.ViewModels
 
             if (DeteccionAutomatica == true)
             {
-                string lang = "en";
-
                 var tlang = _detector.Detect(texto);
                 if (!string.IsNullOrEmpty(tlang))
                 {
                     Debug.WriteLine("lenguaje detectado: " + tlang);
-                    lang = tlang;
-                }
-
-                v =
-                (from VoiceInformation voice in SpeechSynthesizer.AllVoices
-                    where
-                    // (voice.Language.Equals("en-US") || voice.Language.Equals("en-GB"))
-                    voice.Language.StartsWith(lang) == true
-                    select voice).First();
-                if (v == null)
-                {
-                    v =
-                    (from VoiceInformation voice in SpeechSynthesizer.AllVoices
-                        select voice).First();
+                    v = (from VoiceInformation voice in AllVoices where voice.Language.StartsWith(tlang) == true select voice).FirstOrDefault();
                     if (v == null)
                     {
-                        CanPlay = true;
-                        await new MessageDialog(string.Format(_l.GetString("MissingLanguage"), tlang)).ShowAsync();
-                        return;
+                        v = DefaultVoice;
+                    }
+                    else
+                    {
+                        Debug.WriteLine("seleccionando voz " + v.DisplayName);
                     }
                 }
                 else
                 {
-                    Debug.WriteLine("seleccionando voz " + v.DisplayName);
+                    v = DefaultVoice;
                 }
             }
             else
@@ -372,7 +415,9 @@ namespace ReadMyNotifications.ViewModels
             Debug.WriteLine("ProcesarCola");
             if (Mensajes.Any())
             {
-                var msg = Mensajes.First();
+                var msg = Mensajes.FirstOrDefault();
+                if (msg == null)
+                    return;
                 Debug.WriteLine("ProcesarCola: procesando " + msg.Texto);
                 Mensajes.Remove(msg);
                 //if (msg.Texto.Equals(RECOG))
