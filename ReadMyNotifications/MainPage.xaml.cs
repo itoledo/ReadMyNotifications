@@ -42,7 +42,11 @@ namespace ReadMyNotifications
 
             DataContext = App.ViewModel;
 
-            this.Loaded += async (sender, args) => await App.ViewModel.Init(this.MediaElement);
+            this.Loaded += async (sender, args) =>
+            {
+                await App.ViewModel.Init(this.MediaElement);
+                await App.ViewModel.GetNotifications();
+            };
 
             var titleBar = ApplicationView.GetForCurrentView().TitleBar;
             titleBar.BackgroundColor = Color.FromArgb(100, 14, 116, 230);

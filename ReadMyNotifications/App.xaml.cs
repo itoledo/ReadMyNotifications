@@ -17,6 +17,7 @@ using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
+using Microsoft.HockeyApp;
 using ReadMyNotifications.ViewModels;
 
 namespace ReadMyNotifications
@@ -36,6 +37,7 @@ namespace ReadMyNotifications
             this.InitializeComponent();
             this.Suspending += OnSuspending;
             ViewModel = new MainViewModel();
+            Microsoft.HockeyApp.HockeyClient.Current.Configure("1b73ec47435844f3b00c28e67b048c75");
         }
 
         /// <summary>

@@ -123,14 +123,26 @@
   <data name="AutoLangHint.Text" xml:space="preserve">
     <value>This will try to detect the language of each phrase, and select the voice that matches that language among all installed voices on the system.</value>
   </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="ContactSupport.Content" xml:space="preserve">
+    <value>Contact support</value>
+  </data>
   <data name="DefaultVoice.Header" xml:space="preserve">
     <value>Default voice</value>
+  </data>
+  <data name="DevelopedBy.Text" xml:space="preserve">
+    <value>Developed by</value>
   </data>
   <data name="From" xml:space="preserve">
     <value>From</value>
   </data>
   <data name="MissingLanguage" xml:space="preserve">
     <value>No voice installed for language {0}, please install!</value>
+  </data>
+  <data name="NeedsPermission" xml:space="preserve">
+    <value>This app needs permission to read your notifications. It cannot work otherwise.</value>
   </data>
   <data name="NoNotifications" xml:space="preserve">
     <value>No notifications found.</value>
@@ -141,16 +153,31 @@
   <data name="PlayButton.Label" xml:space="preserve">
     <value>Read all</value>
   </data>
+  <data name="PleaseReview.Content" xml:space="preserve">
+    <value>Please review this app at the Windows Store!</value>
+  </data>
   <data name="ReadButton.Content" xml:space="preserve">
     <value>Read notifications</value>
   </data>
   <data name="ReadEnd" xml:space="preserve">
     <value>Finished reading your notifications.</value>
   </data>
+  <data name="ReloadButton.Content" xml:space="preserve">
+    <value>Reload</value>
+  </data>
+  <data name="Retry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="RetryPermission" xml:space="preserve">
+    <value>We need permission to read your notifications.</value>
+  </data>
   <data name="StopButton.Label" xml:space="preserve">
     <value>Stop</value>
   </data>
   <data name="ToggleAutoLanguage.Header" xml:space="preserve">
     <value>Automatic language detection</value>
+  </data>
+  <data name="Webpage.Content" xml:space="preserve">
+    <value>Visit our webpage</value>
   </data>
 </root>

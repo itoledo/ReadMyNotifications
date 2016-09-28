@@ -2,13 +2,13 @@
 
 <VoiceCommands xmlns="http://schemas.microsoft.com/voicecommands/1.2">
   <CommandSet xml:lang="en-US">
-    <AppName> Read my notifications </AppName>
+    <AppName> notifications </AppName>
     <!--<CommandPrefix> read </CommandPrefix>-->
     <Example> read my notifications </Example>
 
     <Command Name="Read">
       <Example> read my notifications </Example>
-      <ListenFor> read my notifications </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> read my {builtin:AppName} </ListenFor>
       <Feedback> Checking your notifications... </Feedback>
       <Navigate />
     </Command>
@@ -16,25 +16,29 @@
   </CommandSet>
 
   <CommandSet xml:lang="es-ES">
-    <CommandPrefix> lee mis notifications</CommandPrefix>
+    <AppName> notificaciones </AppName>
     <Example> lee mis notificaciones </Example>
 
     <Command Name="Read">
       <Example> lee mis notificaciones </Example>
-      <ListenFor> lee mis notificaciones </ListenFor>
-      <Feedback> Revisando tus noficiaciones... </Feedback>
+      <ListenFor RequireAppName="ExplicitlySpecified"> lee mis {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> leer mis {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> léeme mis {builtin:AppName} </ListenFor>
+      <Feedback> Revisando tus notificaciones... </Feedback>
       <Navigate />
     </Command>
 
   </CommandSet>
   <CommandSet xml:lang="es-MX">
-    <CommandPrefix> lee mis notifications</CommandPrefix>
+    <AppName> notificaciones </AppName>
     <Example> lee mis notificaciones </Example>
 
     <Command Name="Read">
       <Example> lee mis notificaciones </Example>
-      <ListenFor> lee mis notificaciones </ListenFor>
-      <Feedback> Revisando tus noficiaciones... </Feedback>
+      <ListenFor RequireAppName="ExplicitlySpecified"> lee mis {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> leer mis {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> léeme mis {builtin:AppName} </ListenFor>
+      <Feedback> Revisando tus notificaciones... </Feedback>
       <Navigate />
     </Command>
 

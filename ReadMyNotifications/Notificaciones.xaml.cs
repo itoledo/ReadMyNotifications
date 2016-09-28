@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -27,7 +28,17 @@ namespace ReadMyNotifications
         {
             this.InitializeComponent();
             DataContext = App.ViewModel;
-            this.Loaded += async (sender, args) => await App.ViewModel.GetNotifications();
+            //this.Loaded += async (sender, args) =>
+            //{
+            //    try
+            //    {
+            //        await App.ViewModel.GetNotifications();
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        Debug.WriteLine($"excepcion: {e}");
+            //    }
+            //};
         }
 
         public async void ReadNotifications()
@@ -37,11 +48,22 @@ namespace ReadMyNotifications
 
         private async void Lista_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var notif = e.AddedItems?[0] as Notificacion;
-            if (notif != null)
+            if (e.AddedItems == null || e.AddedItems.Count == 0)
+                return;
+
+            try
             {
-                App.ViewModel.StopReading();
-                await App.ViewModel.ReadNotification(notif);
+                var notif = e.AddedItems[0] as Notificacion;
+                if (notif != null)
+                {
+                    App.ViewModel.StopReading();
+                    await App.ViewModel.ReadNotification(notif);
+                }
+            }
+            catch (Exception ex)
+            {
+                // esto se cae a veces
+                Debug.WriteLine($"excepcion: {ex}");
             }
         }
 
@@ -53,6 +75,12 @@ namespace ReadMyNotifications
         private void Stop_OnClick(object sender, RoutedEventArgs e)
         {
             App.ViewModel.StopReading();
+        }
+
+        private async void Reload_OnClick(object sender, RoutedEventArgs e)
+        {
+            App.ViewModel.StopReading();
+            await App.ViewModel.GetNotifications();
         }
     }
 }
