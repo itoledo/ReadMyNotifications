@@ -110,6 +110,36 @@
 
   </CommandSet>
 
+  <CommandSet xml:lang="ja-JP">
+    <AppName> 通知 </AppName>
+    <Example> 私の通知を読む </Example>
+
+    <Command Name="Read">
+      <Example> 私の通知を読む </Example>
+      <ListenFor RequireAppName="ExplicitlySpecified"> 私の {builtin:AppName} を読む </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> 私の {builtin:AppName} 読んで </ListenFor>
+      <Feedback> あなたの通知をチェックし... </Feedback>
+      <Navigate />
+    </Command>
+
+  </CommandSet>
+
+  <CommandSet xml:lang="pt-BR">
+    <AppName> notificações </AppName>
+    <Example> ler as minhas notificações </Example>
+
+    <Command Name="Read">
+      <Example> ler as minhas notificações </Example>
+      <ListenFor RequireAppName="ExplicitlySpecified"> ler as minhas {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> ler meus {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> ler os meus {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> leia os meus {builtin:AppName} </ListenFor>
+      <Feedback> verificar as suas notificações... </Feedback>
+      <Navigate />
+    </Command>
+
+  </CommandSet>
+
 </VoiceCommands>
 
   <!-- Example -->

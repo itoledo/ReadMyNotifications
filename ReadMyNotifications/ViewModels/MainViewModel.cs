@@ -69,7 +69,10 @@ namespace ReadMyNotifications.ViewModels
                 {
                     var voces = from VoiceInformation voice in SpeechSynthesizer.AllVoices select voice;
                     foreach (var v in voces)
+                    {
+                        Debug.WriteLine($"voz: {v.Language} {v.DisplayName}");
                         AllVoices.Add(v);
+                    }
                 }
             }
             catch (Exception ex)
@@ -444,7 +447,7 @@ namespace ReadMyNotifications.ViewModels
                 if (!string.IsNullOrEmpty(tlang))
                 {
                     Debug.WriteLine("lenguaje detectado: " + tlang);
-                    v = (from VoiceInformation voice in AllVoices where voice.Language.StartsWith(tlang) == true select voice).FirstOrDefault();
+                    v = (from VoiceInformation voice in AllVoices where voice.Language.ToLower().StartsWith(tlang) == true select voice).FirstOrDefault();
                     if (v == null)
                     {
                         v = DefaultVoice;
