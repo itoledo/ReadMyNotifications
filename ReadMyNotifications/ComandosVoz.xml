@@ -43,6 +43,73 @@
     </Command>
 
   </CommandSet>
+
+  <CommandSet xml:lang="de-DE">
+    <AppName> Benachrichtigungen </AppName>
+    <Example> Lesen Sie meine Benachrichtigungen </Example>
+
+    <Command Name="Read">
+      <Example> Lesen Sie meine Benachrichtigungen </Example>
+      <ListenFor RequireAppName="ExplicitlySpecified"> lesen sie meine {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> lasen mein {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> lesen sie mein {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> las meine {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> lese meine {builtin:AppName} </ListenFor>
+      <Feedback> Überprüfen Sie Ihre Benachrichtigungen ... </Feedback>
+      <Navigate />
+    </Command>
+
+  </CommandSet>
+
+  <CommandSet xml:lang="fr-FR">
+    <AppName> notifications </AppName>
+    <Example> lire mes notifications </Example>
+
+    <Command Name="Read">
+      <Example> lire mes notifications </Example>
+      <ListenFor RequireAppName="ExplicitlySpecified"> lire mes {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> lire dans mes {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> de lire mes {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> lu mes {builtin:AppName} </ListenFor>
+      <Feedback> vérifier vos notifications ... </Feedback>
+      <Navigate />
+    </Command>
+
+  </CommandSet>
+
+  <CommandSet xml:lang="it-IT">
+    <AppName> notifiche </AppName>
+    <Example> Leggi le mie notifiche </Example>
+
+    <Command Name="Read">
+      <Example> Leggi le mie notifiche </Example>
+      <ListenFor RequireAppName="ExplicitlySpecified"> leggie le mie {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> leggere i miei {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> leggere le mie {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> leggere il mio {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> letto i miei {builtin:AppName} </ListenFor>
+      <Feedback> controllare le notifiche ... </Feedback>
+      <Navigate />
+    </Command>
+
+  </CommandSet>
+
+  <CommandSet xml:lang="zh-CN">
+    <AppName> 通知 </AppName>
+    <Example> 阅读我的通知 </Example>
+
+    <Command Name="Read">
+      <Example> 阅读我的通知 </Example>
+      <ListenFor RequireAppName="ExplicitlySpecified"> 阅读我的通知 {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> 阅读我 {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> 读我的 {builtin:AppName} </ListenFor>
+      <ListenFor RequireAppName="ExplicitlySpecified"> 看了我的 {builtin:AppName} </ListenFor>
+      <Feedback> 检查您的通知... </Feedback>
+      <Navigate />
+    </Command>
+
+  </CommandSet>
+
 </VoiceCommands>
 
   <!-- Example -->
