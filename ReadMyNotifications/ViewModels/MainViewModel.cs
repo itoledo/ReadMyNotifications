@@ -3,26 +3,19 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Background;
 using Windows.ApplicationModel.Resources;
-using Windows.Devices.Enumeration;
 using Windows.Foundation;
 using Windows.Media.Core;
-using Windows.Media.Devices;
 using Windows.Media.Playback;
 using Windows.Media.SpeechSynthesis;
-using Windows.Phone.Media.Devices;
 using Windows.Storage.Streams;
 using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.Notifications;
 using Windows.UI.Notifications.Management;
 using Windows.UI.Popups;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
 using MyToolkit.Mvvm;
 using ReadMyNotifications.Language;
@@ -39,75 +32,9 @@ namespace ReadMyNotifications.ViewModels
         public ObservableCollection<Notificacion> ListaNotificaciones { get; private set; }
         public ObservableCollection<VoiceInformation> AllVoices { get; private set; }
 
-
         public bool IsPhone
         {
             get { return DeviceTypeHelper.GetDeviceFormFactorType() == DeviceFormFactorType.Phone; }
-        }
-
-        private bool _deteccionAutomatica;
-
-        public bool DeteccionAutomatica
-        {
-            get { return _deteccionAutomatica; }
-            set
-            {
-                _deteccionAutomatica = value;
-                SaveSettings();
-                RaisePropertyChanged(() => DeteccionAutomatica);
-            }
-        }
-
-        private bool _leerEnBackground;
-
-        public bool LeerEnBackground
-        {
-            get { return _leerEnBackground; }
-            set
-            {
-                _leerEnBackground = value;
-                SaveSettings();
-                RaisePropertyChanged(() => LeerEnBackground);
-            }
-        }
-
-        private bool _leerHeadphones;
-
-        public bool LeerHeadphones
-        {
-            get { return _leerHeadphones; }
-            set
-            {
-                _leerHeadphones = value;
-                SaveSettings();
-                RaisePropertyChanged(() => LeerHeadphones);
-            }
-        }
-
-        private bool _leerBluetooth;
-
-        public bool LeerBluetooth
-        {
-            get { return _leerBluetooth; }
-            set
-            {
-                _leerBluetooth = value;
-                SaveSettings();
-                RaisePropertyChanged(() => LeerBluetooth);
-            }
-        }
-
-        private bool _leerSpeaker;
-
-        public bool LeerSpeaker
-        {
-            get { return _leerSpeaker; }
-            set
-            {
-                _leerSpeaker = value;
-                SaveSettings();
-                RaisePropertyChanged(() => LeerSpeaker);
-            }
         }
 
         private VoiceInformation _defaultVoice;
@@ -184,6 +111,72 @@ namespace ReadMyNotifications.ViewModels
                 _defaultVoice = voz;
         }
 
+        #region SETTINGS
+        private bool _deteccionAutomatica;
+
+        public bool DeteccionAutomatica
+        {
+            get { return _deteccionAutomatica; }
+            set
+            {
+                _deteccionAutomatica = value;
+                SaveSettings();
+                RaisePropertyChanged(() => DeteccionAutomatica);
+            }
+        }
+
+        private bool _leerEnBackground;
+
+        public bool LeerEnBackground
+        {
+            get { return _leerEnBackground; }
+            set
+            {
+                _leerEnBackground = value;
+                SaveSettings();
+                RaisePropertyChanged(() => LeerEnBackground);
+            }
+        }
+
+        private bool _leerHeadphones;
+
+        public bool LeerHeadphones
+        {
+            get { return _leerHeadphones; }
+            set
+            {
+                _leerHeadphones = value;
+                SaveSettings();
+                RaisePropertyChanged(() => LeerHeadphones);
+            }
+        }
+
+        private bool _leerBluetooth;
+
+        public bool LeerBluetooth
+        {
+            get { return _leerBluetooth; }
+            set
+            {
+                _leerBluetooth = value;
+                SaveSettings();
+                RaisePropertyChanged(() => LeerBluetooth);
+            }
+        }
+
+        private bool _leerSpeaker;
+
+        public bool LeerSpeaker
+        {
+            get { return _leerSpeaker; }
+            set
+            {
+                _leerSpeaker = value;
+                SaveSettings();
+                RaisePropertyChanged(() => LeerSpeaker);
+            }
+        }
+
         public void LoadSettings()
         {
             if (settings.Values.ContainsKey("DefaultVoiceId"))
@@ -257,8 +250,10 @@ namespace ReadMyNotifications.ViewModels
             if (DefaultVoice != null)
                 settings.Values["DefaultVoiceId"] = DefaultVoice.Id;
         }
+        #endregion
 
         private MediaPlayer _mediaPlayer;
+        private MediaPlaybackList _mediaPlaybackList;
         private bool _initialized = false;
 
         public async Task Init()
@@ -270,23 +265,8 @@ namespace ReadMyNotifications.ViewModels
 
             if (_l == null)
                 _l = new ResourceLoader();
-            //_l = Windows.ApplicationModel.Resources.ResourceLoader.GetForCurrentView();
 
-            _mediaPlayer = new MediaPlayer();
-            _mediaPlayer.AudioCategory = MediaPlayerAudioCategory.Speech;
-
-            //string audioSelector = MediaDevice.GetDefaultAudioRenderId(AudioDeviceRole.Default);
-            //var outputDevices = await DeviceInformation.FindAllAsync(audioSelector);
-            //foreach (var o in outputDevices)
-            //{
-            //    Debug.WriteLine($"device {o.Id} - {o.Name} - {o.Kind}");
-            //    foreach (var d in o.Properties)
-            //    {
-            //        Debug.WriteLine($"{d.Key}={d.Value}");
-            //    }
-            //}
-
-            await ActivarMediaElement();
+            InitMediaPlayer();
 
             switch (await CheckListenerAccess())
             {
@@ -695,15 +675,6 @@ namespace ReadMyNotifications.ViewModels
             await Speak($"{n.Title}. {n.Text}");
         }
 
-        public class Mensaje
-        {
-            public string Texto;
-            public Action<string> Accion;
-            public string[] Comandos;
-        }
-
-        public List<Mensaje> Mensajes = new List<Mensaje>();
-
         private bool _playing = false;
 
         public async Task Speak(string texto)
@@ -711,15 +682,7 @@ namespace ReadMyNotifications.ViewModels
             Debug.WriteLine("Speak: " + texto);
             // The media object for controlling and playing audio.
 
-            if (_playing == false && _mediaPlayer != null)
-            {
-                await Reproducir(texto);
-            }
-            else
-            {
-                Debug.WriteLine("Speak: encolando");
-                Mensajes.Add(new Mensaje() { Texto = texto });
-            }
+            await Reproducir(texto);
         }
 
         public bool CanPlay
@@ -727,28 +690,43 @@ namespace ReadMyNotifications.ViewModels
             get { return !_playing; } set { _playing = !value; RaisePropertyChanged(() => CanPlay); }
         }
 
-        public void StopReading()
+        public void StopMediaPlayer()
         {
-            Mensajes.Clear();
-
             if (_mediaPlayer != null)
             {
+                _mediaPlaybackList.Items.Clear();
                 _mediaPlayer.Pause();
+                //_mediaPlayer.Dispose();
+                //_mediaPlayer = null;
+                //_mediaPlaybackList = null;
             }
+            Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
+                CoreDispatcherPriority.Normal,
+                () =>
+                {
+                    CanPlay = true;
+                                //await ProcesarCola();
+                });
+        }
 
-            CanPlay = true;
+        private void InitMediaPlayer()
+        {
+            if (_mediaPlayer == null)
+            {
+                _mediaPlayer = new MediaPlayer();
+                _mediaPlayer.AudioCategory = MediaPlayerAudioCategory.Speech;
+                _mediaPlaybackList = new MediaPlaybackList();
+                _mediaPlayer.Source = _mediaPlaybackList;
+                _mediaPlayer.MediaEnded -= MediaPlayerOnMediaEnded;
+                _mediaPlayer.MediaEnded += MediaPlayerOnMediaEnded;
+            }
         }
 
         public async Task Reproducir(string texto)
         {
             Debug.WriteLine("Reproducir: " + texto);
 
-            if (_mediaPlayer == null)
-            {
-                Debug.WriteLine("Reproducir: mediaElement NULL!");
-                return;
-            }
-
+            InitMediaPlayer();
             CanPlay = false;
 
             VoiceInformation v = null;
@@ -793,50 +771,27 @@ namespace ReadMyNotifications.ViewModels
             Debug.WriteLine("Generando Speech: post await");
 
             // Send the stream to the media object.
-            _mediaPlayer.Source = MediaSource.CreateFromStream(stream, stream.ContentType);
+            var mediaSource = MediaSource.CreateFromStream(stream, stream.ContentType);
+            var mediaPlaybackItem = new MediaPlaybackItem(mediaSource); 
+            _mediaPlaybackList.Items.Add(mediaPlaybackItem);
+
             _mediaPlayer.Play();
         }
 
         public async Task ActivarMediaElement()
         {
             Debug.WriteLine("ActivarMediaElement");
-            _mediaPlayer.MediaEnded -= MediaPlayerOnMediaEnded;
-            _mediaPlayer.MediaEnded += MediaPlayerOnMediaEnded;
-            if (_mediaPlayer.PlaybackSession != null && _mediaPlayer.PlaybackSession.PlaybackState == MediaPlaybackState.Playing)
-                ;
-            else
-                await ProcesarCola();
+            //if (_mediaPlayer.PlaybackSession != null && _mediaPlayer.PlaybackSession.PlaybackState == MediaPlaybackState.Playing)
+            //    ;
+            //else
+            //    await ProcesarCola();
         }
 
         private async void MediaPlayerOnMediaEnded(MediaPlayer sender, object args)
         {
             Debug.WriteLine("MediaElementOnMediaEnded");
 
-            await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
-                CoreDispatcherPriority.Normal,
-                async () =>
-                {
-                    CanPlay = true;
-                    await ProcesarCola();
-                });
+            StopMediaPlayer();
         }
-
-        public async Task ProcesarCola()
-        {
-            Debug.WriteLine("ProcesarCola");
-            if (Mensajes.Any())
-            {
-                var msg = Mensajes.FirstOrDefault();
-                if (msg == null)
-                    return;
-                Debug.WriteLine("ProcesarCola: procesando " + msg.Texto);
-                Mensajes.Remove(msg);
-                //if (msg.Texto.Equals(RECOG))
-                //    await CapturarSpeech(msg.Accion, msg.Comandos);
-                //else
-                await Reproducir(msg.Texto);
-            }
-        }
-
     }
 }

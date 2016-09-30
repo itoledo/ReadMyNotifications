@@ -56,7 +56,7 @@ namespace ReadMyNotifications
                 var notif = e.AddedItems[0] as Notificacion;
                 if (notif != null)
                 {
-                    App.ViewModel.StopReading();
+                    //App.ViewModel.StopMediaPlayer();
                     await App.ViewModel.ReadNotification(notif);
                 }
             }
@@ -74,12 +74,12 @@ namespace ReadMyNotifications
 
         private void Stop_OnClick(object sender, RoutedEventArgs e)
         {
-            App.ViewModel.StopReading();
+            App.ViewModel.StopMediaPlayer();
         }
 
         private async void Reload_OnClick(object sender, RoutedEventArgs e)
         {
-            App.ViewModel.StopReading();
+            App.ViewModel.StopMediaPlayer();
             await App.ViewModel.GetNotifications();
         }
     }
