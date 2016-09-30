@@ -339,6 +339,11 @@ namespace ReadMyNotifications.ViewModels
 
         public async Task RegisterBackground()
         {
+            BackgroundExecutionManager.RemoveAccess();
+
+            if (LeerEnBackground == false)
+                return;
+
             await BackgroundExecutionManager.RequestAccessAsync();
 
             if (!BackgroundTaskRegistration.AllTasks.Any(i => i.Value.Name.Equals("UserNotificationChanged")))
@@ -693,13 +698,9 @@ namespace ReadMyNotifications.ViewModels
         public void StopMediaPlayer()
         {
             if (_mediaPlayer != null)
-            {
-                _mediaPlaybackList.Items.Clear();
                 _mediaPlayer.Pause();
-                //_mediaPlayer.Dispose();
-                //_mediaPlayer = null;
-                //_mediaPlaybackList = null;
-            }
+            if (_mediaPlaybackList != null && _mediaPlaybackList.Items != null)
+                _mediaPlaybackList.Items.Clear();
             Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
                 CoreDispatcherPriority.Normal,
                 () =>
@@ -757,34 +758,35 @@ namespace ReadMyNotifications.ViewModels
                 v = DefaultVoice;
             }
 
-            Debug.WriteLine("Generando Speech");
-            // The object for controlling the speech synthesis engine (voice).
-            var synth = new Windows.Media.SpeechSynthesis.SpeechSynthesizer();
-            synth.Voice = v;
             // Generate the audio stream from plain text.
             //Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
             //    CoreDispatcherPriority.Normal,
             //    async () =>
             //    {
-            Debug.WriteLine("Generando Speech: await");
-            SpeechSynthesisStream stream = await synth.SynthesizeTextToStreamAsync(texto);
-            Debug.WriteLine("Generando Speech: post await");
+            //Debug.WriteLine("Generando Speech: await");
+            //var view = Windows.ApplicationModel.Core.CoreApplication.MainView;
+            //await view.Dispatcher.RunAsync(
+            ////await view.CoreWindow.Dispatcher.RunAsync(
+            //    CoreDispatcherPriority.Normal,
+            //    async () =>
+            //    {
+                    Debug.WriteLine("Generando Speech");
+            // The object for controlling the speech synthesis engine (voice).
+                    SpeechSynthesisStream stream;
+                    using (var synth = new Windows.Media.SpeechSynthesis.SpeechSynthesizer())
+                    {
+                        synth.Voice = v;
+                        stream = await synth.SynthesizeTextToStreamAsync(texto);
+                    }
+                    Debug.WriteLine("Generando Speech: post await");
 
-            // Send the stream to the media object.
-            var mediaSource = MediaSource.CreateFromStream(stream, stream.ContentType);
-            var mediaPlaybackItem = new MediaPlaybackItem(mediaSource); 
-            _mediaPlaybackList.Items.Add(mediaPlaybackItem);
+                    // Send the stream to the media object.
+                    var mediaSource = MediaSource.CreateFromStream(stream, stream.ContentType);
+                    var mediaPlaybackItem = new MediaPlaybackItem(mediaSource);
+                    _mediaPlaybackList.Items.Add(mediaPlaybackItem);
 
-            _mediaPlayer.Play();
-        }
-
-        public async Task ActivarMediaElement()
-        {
-            Debug.WriteLine("ActivarMediaElement");
-            //if (_mediaPlayer.PlaybackSession != null && _mediaPlayer.PlaybackSession.PlaybackState == MediaPlaybackState.Playing)
-            //    ;
-            //else
-            //    await ProcesarCola();
+                    _mediaPlayer.Play();
+                //});
         }
 
         private async void MediaPlayerOnMediaEnded(MediaPlayer sender, object args)

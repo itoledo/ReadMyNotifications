@@ -245,8 +245,9 @@ namespace ReadMyNotifications
                         break;
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Debug.WriteLine($"excepcion: {e}");
             }
             finally
             {
