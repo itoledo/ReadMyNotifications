@@ -248,8 +248,10 @@ namespace ReadMyNotifications.ViewModels
             return -1;
         }
 
-        public void RegisterBackground()
+        public async Task RegisterBackground()
         {
+            await BackgroundExecutionManager.RequestAccessAsync();
+
             if (!BackgroundTaskRegistration.AllTasks.Any(i => i.Value.Name.Equals("UserNotificationChanged")))
             {
                 // Specify the background task
