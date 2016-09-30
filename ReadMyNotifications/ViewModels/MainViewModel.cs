@@ -294,6 +294,7 @@ namespace ReadMyNotifications.ViewModels
 
             try
             {
+                Debug.WriteLine("obteniendo notificaciones");
                 IReadOnlyList<UserNotification> newnotifs;
                 // Get the toast notifications
                 try
@@ -314,6 +315,8 @@ namespace ReadMyNotifications.ViewModels
                 }
 
                 var lista = new List<Notificacion>();
+
+                Debug.WriteLine("iterando");
 
                 foreach (var notif in newnotifs)
                 {
@@ -427,6 +430,7 @@ namespace ReadMyNotifications.ViewModels
             {
                 _checking = false;
             }
+            Debug.WriteLine("fin");
         }
 
         public async Task GetNotifications()

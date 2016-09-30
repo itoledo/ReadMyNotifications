@@ -28,6 +28,7 @@ namespace ReadMyNotifications
     sealed partial class App : Application
     {
         public static MainViewModel ViewModel { get; private set; }
+
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
@@ -145,7 +146,7 @@ namespace ReadMyNotifications
 
             if (args.Kind == ActivationKind.VoiceCommand)
             {
-                VoiceCommandActivatedEventArgs voiceArgs = (VoiceCommandActivatedEventArgs)args;
+                VoiceCommandActivatedEventArgs voiceArgs = (VoiceCommandActivatedEventArgs) args;
                 if (voiceArgs.Result.RulePath.ToList().Contains("Read"))
                 {
                     navigationCommand = "read";
@@ -178,11 +179,19 @@ namespace ReadMyNotifications
         protected override async void OnBackgroundActivated(BackgroundActivatedEventArgs args)
         {
             Debug.WriteLine("OnBackgroundActivated");
-            base.OnBackgroundActivated(args);
+            //base.OnBackgroundActivated(args);
 
             var deferral = args.TaskInstance.GetDeferral();
 
-            await ViewModel.Init();
+            try
+            {
+                await ViewModel.Init();
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine($"OnBackgroundActivated: excepcion: {e}");
+                return;
+            }
 
             switch (args.TaskInstance.Task.Name)
             {
