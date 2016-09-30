@@ -7,10 +7,13 @@ using System.Text;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Background;
 using Windows.ApplicationModel.Resources;
+using Windows.Devices.Enumeration;
 using Windows.Foundation;
 using Windows.Media.Core;
+using Windows.Media.Devices;
 using Windows.Media.Playback;
 using Windows.Media.SpeechSynthesis;
+using Windows.Phone.Media.Devices;
 using Windows.Storage.Streams;
 using Windows.System;
 using Windows.UI.Core;
@@ -23,6 +26,7 @@ using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
 using MyToolkit.Mvvm;
 using ReadMyNotifications.Language;
+using ReadMyNotifications.Utils;
 using SQLite;
 
 namespace ReadMyNotifications.ViewModels
@@ -35,6 +39,12 @@ namespace ReadMyNotifications.ViewModels
         public ObservableCollection<Notificacion> ListaNotificaciones { get; private set; }
         public ObservableCollection<VoiceInformation> AllVoices { get; private set; }
 
+
+        public bool IsPhone
+        {
+            get { return DeviceTypeHelper.GetDeviceFormFactorType() == DeviceFormFactorType.Phone; }
+        }
+
         private bool _deteccionAutomatica;
 
         public bool DeteccionAutomatica
@@ -45,6 +55,58 @@ namespace ReadMyNotifications.ViewModels
                 _deteccionAutomatica = value;
                 SaveSettings();
                 RaisePropertyChanged(() => DeteccionAutomatica);
+            }
+        }
+
+        private bool _leerEnBackground;
+
+        public bool LeerEnBackground
+        {
+            get { return _leerEnBackground; }
+            set
+            {
+                _leerEnBackground = value;
+                SaveSettings();
+                RaisePropertyChanged(() => LeerEnBackground);
+            }
+        }
+
+        private bool _leerHeadphones;
+
+        public bool LeerHeadphones
+        {
+            get { return _leerHeadphones; }
+            set
+            {
+                _leerHeadphones = value;
+                SaveSettings();
+                RaisePropertyChanged(() => LeerHeadphones);
+            }
+        }
+
+        private bool _leerBluetooth;
+
+        public bool LeerBluetooth
+        {
+            get { return _leerBluetooth; }
+            set
+            {
+                _leerBluetooth = value;
+                SaveSettings();
+                RaisePropertyChanged(() => LeerBluetooth);
+            }
+        }
+
+        private bool _leerSpeaker;
+
+        public bool LeerSpeaker
+        {
+            get { return _leerSpeaker; }
+            set
+            {
+                _leerSpeaker = value;
+                SaveSettings();
+                RaisePropertyChanged(() => LeerSpeaker);
             }
         }
 
@@ -151,11 +213,47 @@ namespace ReadMyNotifications.ViewModels
             }
             else
                 _deteccionAutomatica = true;
+
+            if (settings.Values.ContainsKey("LeerEnBackground"))
+            {
+                _leerEnBackground = (bool)settings.Values["LeerEnBackground"];
+                Debug.WriteLine($"ReadSetting: LeerEnBackground: {LeerEnBackground}");
+            }
+            else
+                _leerEnBackground = true;
+
+            if (settings.Values.ContainsKey("LeerSpeaker"))
+            {
+                _leerSpeaker = (bool)settings.Values["LeerSpeaker"];
+                Debug.WriteLine($"ReadSetting: LeerSpeaker: {LeerSpeaker}");
+            }
+            else
+                _leerSpeaker = true;
+
+            if (settings.Values.ContainsKey("LeerHeadphones"))
+            {
+                _leerHeadphones = (bool)settings.Values["LeerHeadphones"];
+                Debug.WriteLine($"ReadSetting: LeerHeadphones: {LeerHeadphones}");
+            }
+            else
+                _leerHeadphones = true;
+
+            if (settings.Values.ContainsKey("LeerBluetooth"))
+            {
+                _leerBluetooth = (bool)settings.Values["LeerBluetooth"];
+                Debug.WriteLine($"ReadSetting: LeerBluetooth: {LeerBluetooth}");
+            }
+            else
+                _leerBluetooth = true;
         }
 
         public void SaveSettings()
         {
             settings.Values["DeteccionAutomatica"] = DeteccionAutomatica;
+            settings.Values["LeerEnBackground"] = LeerEnBackground;
+            settings.Values["LeerSpeaker"] = LeerSpeaker;
+            settings.Values["LeerHeadphones"] = LeerHeadphones;
+            settings.Values["LeerBluetooth"] = LeerBluetooth;
             if (DefaultVoice != null)
                 settings.Values["DefaultVoiceId"] = DefaultVoice.Id;
         }
@@ -175,14 +273,25 @@ namespace ReadMyNotifications.ViewModels
             //_l = Windows.ApplicationModel.Resources.ResourceLoader.GetForCurrentView();
 
             _mediaPlayer = new MediaPlayer();
-            _mediaPlayer.AudioCategory = MediaPlayerAudioCategory.Media;
+            _mediaPlayer.AudioCategory = MediaPlayerAudioCategory.Speech;
+
+            //string audioSelector = MediaDevice.GetDefaultAudioRenderId(AudioDeviceRole.Default);
+            //var outputDevices = await DeviceInformation.FindAllAsync(audioSelector);
+            //foreach (var o in outputDevices)
+            //{
+            //    Debug.WriteLine($"device {o.Id} - {o.Name} - {o.Kind}");
+            //    foreach (var d in o.Properties)
+            //    {
+            //        Debug.WriteLine($"{d.Key}={d.Value}");
+            //    }
+            //}
 
             await ActivarMediaElement();
 
             switch (await CheckListenerAccess())
             {
                 case 0:
-                    RegisterBackground();
+                    await RegisterBackground();
                     break;
                 case 1:
                     await new MessageDialog(_l.GetString("NeedsPermission")).ShowAsync();

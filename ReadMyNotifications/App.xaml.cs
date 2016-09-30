@@ -10,6 +10,7 @@ using Windows.ApplicationModel.Activation;
 using Windows.ApplicationModel.VoiceCommands;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Phone.Media.Devices;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -18,6 +19,7 @@ using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using Microsoft.HockeyApp;
+using ReadMyNotifications.Utils;
 using ReadMyNotifications.ViewModels;
 
 namespace ReadMyNotifications
@@ -185,22 +187,71 @@ namespace ReadMyNotifications
 
             try
             {
-                await ViewModel.Init();
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine($"OnBackgroundActivated: excepcion: {e}");
-                return;
-            }
+                if (ViewModel.LeerEnBackground == false)
+                    return;
 
-            switch (args.TaskInstance.Task.Name)
-            {
-                case "UserNotificationChanged":
-                    await ViewModel.CheckNewNotifications();
-                    break;
-            }
+                if (DeviceTypeHelper.GetDeviceFormFactorType() == DeviceFormFactorType.Phone)
+                {
+                    var current = AudioRoutingManager.GetDefault().GetAudioEndpoint();
+                    switch (current)
+                    {
+                        case AudioRoutingEndpoint.Bluetooth:
+                            case AudioRoutingEndpoint.BluetoothPreferred:
+                            case AudioRoutingEndpoint.BluetoothWithNoiseAndEchoCancellation:
+                            if (ViewModel.LeerBluetooth == false)
+                            {
+                                Debug.WriteLine("ignorando: bluetooth");
+                                return;
+                            }
+                            break;
+                            case AudioRoutingEndpoint.Earpiece:
+                            case AudioRoutingEndpoint.WiredHeadset:
+                            case AudioRoutingEndpoint.WiredHeadsetSpeakerOnly:
+                            if (ViewModel.LeerHeadphones == false)
+                            {
+                                Debug.WriteLine("ignorando: headphones");
+                                return;
+                            }
+                            break;
 
-            deferral.Complete();
+                            //case AudioRoutingEndpoint.Default:
+                            //case AudioRoutingEndpoint.Speakerphone:
+                        default:
+                            if (ViewModel.LeerSpeaker == false)
+                            {
+                                Debug.WriteLine("ignorando: speaker");
+                                return;
+                            }
+                            break;
+                    }
+                }
+
+
+                try
+                {
+                    await ViewModel.Init();
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine($"OnBackgroundActivated: excepcion: {e}");
+                    deferral.Complete();
+                    return;
+                }
+
+                switch (args.TaskInstance.Task.Name)
+                {
+                    case "UserNotificationChanged":
+                        await ViewModel.CheckNewNotifications();
+                        break;
+                }
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                deferral.Complete();
+            }
         }
     }
 }

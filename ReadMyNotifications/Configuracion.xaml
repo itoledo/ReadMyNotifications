@@ -5,7 +5,12 @@
     xmlns:local="using:ReadMyNotifications"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:converters="using:MyToolkit.Converters"
     mc:Ignorable="d">
+    
+    <Page.Resources>
+        <converters:VisibilityConverter x:Key="VisibilityConverter" />
+    </Page.Resources>
 
     <StackPanel Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Padding="20" Orientation="Vertical">
         <ComboBox x:Uid="DefaultVoice" x:Name="CmbLenguaje" Header="Default voice" ItemsSource="{Binding AllVoices}" SelectedValue="{Binding DefaultVoice, Mode=TwoWay}">
@@ -16,6 +21,12 @@
             </ComboBox.ItemTemplate>
         </ComboBox>
         <ToggleSwitch x:Uid="ToggleAutoLanguage" Header="Automatic language detection" IsOn="{Binding DeteccionAutomatica, Mode=TwoWay}"/>
-        <TextBlock x:Uid="AutoLangHint" Text="This will try to detect the language of each phrase, and select the voice that matches that language among all installed voices on the system." FontWeight="ExtraLight" TextWrapping="WrapWholeWords"/>
+        <TextBlock x:Uid="AutoLangHint" Text="Detect the language of each phrase, and select the voice that matches that language among all installed voices on the system." FontWeight="ExtraLight" TextWrapping="WrapWholeWords"/>
+        <ToggleSwitch x:Uid="ToggleBackground" Header="Read notifications in background" IsOn="{Binding LeerEnBackground, Mode=TwoWay}"/>
+        <StackPanel Orientation="Vertical" Visibility="{Binding IsPhone}">
+            <ToggleSwitch x:Uid="ToggleSpeaker" Header="when speakers are connected" IsOn="{Binding LeerSpeaker, Mode=TwoWay}" Visibility="{Binding LeerEnBackground, Converter={StaticResource VisibilityConverter}}"/>
+            <ToggleSwitch x:Uid="ToggleHeadPhones" Header="when headphones are connected" IsOn="{Binding LeerHeadphones, Mode=TwoWay}" Visibility="{Binding LeerEnBackground, Converter={StaticResource VisibilityConverter}}"/>
+            <ToggleSwitch x:Uid="ToggleBluetooth" Header="when bluetooth is connected" IsOn="{Binding LeerBluetooth, Mode=TwoWay}" Visibility="{Binding LeerEnBackground, Converter={StaticResource VisibilityConverter}}"/>
+        </StackPanel>
     </StackPanel>
 </Page>
