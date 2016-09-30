@@ -351,7 +351,8 @@ namespace ReadMyNotifications.ViewModels
                 // Specify the background task
                 var builder = new BackgroundTaskBuilder()
                 {
-                    Name = "UserNotificationChanged"
+                    Name = "UserNotificationChanged",
+                    TaskEntryPoint = "ReadMyNotifications.Background.PlayNotificationTask",
                 };
 
                 // Set the trigger for Listener, listening to Toast Notifications
