@@ -783,9 +783,16 @@ namespace ReadMyNotifications.ViewModels
                     // Send the stream to the media object.
                     var mediaSource = MediaSource.CreateFromStream(stream, stream.ContentType);
                     var mediaPlaybackItem = new MediaPlaybackItem(mediaSource);
+
                     _mediaPlaybackList.Items.Add(mediaPlaybackItem);
 
-                    _mediaPlayer.Play();
+            if (Windows.ApplicationModel.Core.CoreApplication.MainView.Dispatcher.HasThreadAccess)
+                _mediaPlayer.Play();
+            else
+            {
+                Debug.WriteLine("background mode");
+                BackgroundMediaPlayer.Current.Source = mediaPlaybackItem;
+            }
                 //});
         }
 
