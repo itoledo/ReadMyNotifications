@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using Windows.ApplicationModel.Background;
 using Windows.ApplicationModel.Resources;
 using Windows.Foundation;
+using Windows.Media.Core;
+using Windows.Media.Playback;
 using Windows.Media.SpeechSynthesis;
 using Windows.Storage.Streams;
 using Windows.System;
@@ -147,11 +149,16 @@ namespace ReadMyNotifications.ViewModels
                 settings.Values["DefaultVoiceId"] = DefaultVoice.Id;
         }
 
-        public async Task Init(MediaElement mediaElement)
+        private MediaPlayer _mediaPlayer;
+
+        public async Task Init()
         {
             _l = Windows.ApplicationModel.Resources.ResourceLoader.GetForCurrentView();
 
-            await ActivarMediaElement(mediaElement);
+            _mediaPlayer = new MediaPlayer();
+            _mediaPlayer.AudioCategory = MediaPlayerAudioCategory.Media;
+
+            await ActivarMediaElement();
 
             switch (await CheckListenerAccess())
             {
@@ -399,7 +406,7 @@ namespace ReadMyNotifications.ViewModels
             Debug.WriteLine("Speak: " + texto);
             // The media object for controlling and playing audio.
 
-            if (_playing == false && _currentMediaElement != null)
+            if (_playing == false && _mediaPlayer != null)
             {
                 await Reproducir(texto);
             }
@@ -419,9 +426,9 @@ namespace ReadMyNotifications.ViewModels
         {
             Mensajes.Clear();
 
-            if (_currentMediaElement != null)
+            if (_mediaPlayer != null)
             {
-                _currentMediaElement.Stop();
+                _mediaPlayer.Pause();
             }
 
             CanPlay = true;
@@ -431,7 +438,7 @@ namespace ReadMyNotifications.ViewModels
         {
             Debug.WriteLine("Reproducir: " + texto);
 
-            if (_currentMediaElement == null)
+            if (_mediaPlayer == null)
             {
                 Debug.WriteLine("Reproducir: mediaElement NULL!");
                 return;
@@ -481,29 +488,32 @@ namespace ReadMyNotifications.ViewModels
             Debug.WriteLine("Generando Speech: post await");
 
             // Send the stream to the media object.
-            _currentMediaElement.SetSource(stream, stream.ContentType);
-            _currentMediaElement.Play();
+            _mediaPlayer.Source = MediaSource.CreateFromStream(stream, stream.ContentType);
+            _mediaPlayer.Play();
         }
 
-        private MediaElement _currentMediaElement;
-
-        public async Task ActivarMediaElement(MediaElement _mediaElement)
+        public async Task ActivarMediaElement()
         {
             Debug.WriteLine("ActivarMediaElement");
-            _currentMediaElement = _mediaElement;
-            _currentMediaElement.MediaEnded -= MediaElementOnMediaEnded;
-            _currentMediaElement.MediaEnded += MediaElementOnMediaEnded;
-            if (_currentMediaElement.CurrentState == MediaElementState.Playing)
+            _mediaPlayer.MediaEnded -= MediaPlayerOnMediaEnded;
+            _mediaPlayer.MediaEnded += MediaPlayerOnMediaEnded;
+            if (_mediaPlayer.PlaybackSession != null && _mediaPlayer.PlaybackSession.PlaybackState == MediaPlaybackState.Playing)
                 ;
             else
                 await ProcesarCola();
         }
 
-        private async void MediaElementOnMediaEnded(object sender, RoutedEventArgs routedEventArgs)
+        private async void MediaPlayerOnMediaEnded(MediaPlayer sender, object args)
         {
             Debug.WriteLine("MediaElementOnMediaEnded");
-            CanPlay = true;
-            await ProcesarCola();
+
+            await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
+                CoreDispatcherPriority.Normal,
+                async () =>
+                {
+                    CanPlay = true;
+                    await ProcesarCola();
+                });
         }
 
         public async Task ProcesarCola()

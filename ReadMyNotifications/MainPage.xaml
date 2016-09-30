@@ -16,7 +16,6 @@
                CompactPaneLength="50"  OpenPaneLength="180">
         <SplitView.Pane>
             <StackPanel Background="#0e74e6">
-                <MediaElement x:Name="MediaElement"/>
                 <Button x:Name="HamburgerButton" FontFamily="Segoe MDL2 Assets" Content="&#xE700;"
                     Width="50" Height="50" Background="Transparent" Click="HamburgerButton_Click"/>
                                 
