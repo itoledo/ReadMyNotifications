@@ -75,6 +75,8 @@ namespace ReadMyNotifications
 
             await RegistrarComandosVoz();
 
+            await ViewModel.Init();
+
             if (e.PrelaunchActivated == false)
             {
                 if (rootFrame.Content == null)
@@ -133,7 +135,7 @@ namespace ReadMyNotifications
             deferral.Complete();
         }
 
-        protected override void OnActivated(IActivatedEventArgs args)
+        protected override async void OnActivated(IActivatedEventArgs args)
         {
             base.OnActivated(args);
             Frame rootFrame = Window.Current.Content as Frame;
@@ -161,6 +163,8 @@ namespace ReadMyNotifications
                 Window.Current.Content = rootFrame;
             }
 
+            await ViewModel.Init();
+
             // Since we're expecting to always show a details page, navigate even if 
             // a content frame is in place (unlike OnLaunched).
             // Navigate to either the main trip list page, or if a valid voice command
@@ -169,6 +173,25 @@ namespace ReadMyNotifications
 
             // Ensure the current window is active
             Window.Current.Activate();
+        }
+
+        protected override async void OnBackgroundActivated(BackgroundActivatedEventArgs args)
+        {
+            Debug.WriteLine("OnBackgroundActivated");
+            base.OnBackgroundActivated(args);
+
+            var deferral = args.TaskInstance.GetDeferral();
+
+            await ViewModel.Init();
+
+            switch (args.TaskInstance.Task.Name)
+            {
+                case "UserNotificationChanged":
+                    await ViewModel.CheckNewNotifications();
+                    break;
+            }
+
+            deferral.Complete();
         }
     }
 }

@@ -10,6 +10,9 @@ namespace ReadMyNotifications.ViewModels
 {
     public class Notificacion : ObservableObject
     {
+        public uint Id;
+        public DateTimeOffset CreationTime;
+
         private BitmapImage _logo;
         public BitmapImage Logo { get { return _logo; } set { _logo = value; RaisePropertyChanged(() => Logo); } }
         private string _appName;

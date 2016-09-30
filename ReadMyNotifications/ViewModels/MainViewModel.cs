@@ -23,6 +23,7 @@ using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
 using MyToolkit.Mvvm;
 using ReadMyNotifications.Language;
+using SQLite;
 
 namespace ReadMyNotifications.ViewModels
 {
@@ -61,9 +62,19 @@ namespace ReadMyNotifications.ViewModels
         }
 
         Windows.Storage.ApplicationDataContainer settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+        SQLiteConnection _db;
+
+        public class NotifId
+        {
+            [PrimaryKey]
+            public uint Id { get; set; }
+        }
 
         public MainViewModel()
         {
+            _db = new SQLiteConnection("notifications.db3");
+            _db.CreateTable<NotifId>();
+
             AllVoices = new ObservableCollection<VoiceInformation>();
             try
             {
@@ -130,8 +141,8 @@ namespace ReadMyNotifications.ViewModels
             }
             else
                 SetDefaultVoice();
-                //_defaultVoice =
-                //    (from v in AllVoices where v.Id == SpeechSynthesizer.DefaultVoice.Id select v).FirstOrDefault();
+            //_defaultVoice =
+            //    (from v in AllVoices where v.Id == SpeechSynthesizer.DefaultVoice.Id select v).FirstOrDefault();
 
             if (settings.Values.ContainsKey("DeteccionAutomatica"))
             {
@@ -150,10 +161,18 @@ namespace ReadMyNotifications.ViewModels
         }
 
         private MediaPlayer _mediaPlayer;
+        private bool _initialized = false;
 
         public async Task Init()
         {
-            _l = Windows.ApplicationModel.Resources.ResourceLoader.GetForCurrentView();
+            if (_initialized == true)
+                return;
+
+            _initialized = true;
+
+            if (_l == null)
+                _l = new ResourceLoader();
+            //_l = Windows.ApplicationModel.Resources.ResourceLoader.GetForCurrentView();
 
             _mediaPlayer = new MediaPlayer();
             _mediaPlayer.AudioCategory = MediaPlayerAudioCategory.Media;
@@ -163,6 +182,7 @@ namespace ReadMyNotifications.ViewModels
             switch (await CheckListenerAccess())
             {
                 case 0:
+                    RegisterBackground();
                     break;
                 case 1:
                     await new MessageDialog(_l.GetString("NeedsPermission")).ShowAsync();
@@ -203,7 +223,6 @@ namespace ReadMyNotifications.ViewModels
             {
                 // This means the user has granted access.
                 case UserNotificationListenerAccessStatus.Allowed:
-                    //RegisterBackground();
                     // Yay! Proceed as normal
                     return 0;
 
@@ -259,6 +278,155 @@ namespace ReadMyNotifications.ViewModels
             }
         }
 
+        private bool _checking = false;
+
+        public async Task CheckNewNotifications()
+        {
+            if (_checking == true)
+            {
+                Debug.WriteLine("skipping");
+                return;
+            }
+
+            _checking = true;
+
+            try
+            {
+                IReadOnlyList<UserNotification> newnotifs;
+                // Get the toast notifications
+                try
+                {
+                    var listener = UserNotificationListener.Current;
+                    newnotifs = await _listener.GetNotificationsAsync(NotificationKinds.Toast);
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine($"excepcion: {e}");
+                    newnotifs = null;
+                }
+
+                if (newnotifs == null)
+                {
+                    await Speak(_l.GetString("ErrorGet"));
+                    return;
+                }
+
+                var lista = new List<Notificacion>();
+
+                foreach (var notif in newnotifs)
+                {
+                    // comparemos con la bd
+                    var existe = _db.Table<NotifId>().FirstOrDefault(z => z.Id == notif.Id);
+                    if (existe != null)
+                        continue;
+
+                    var n = new Notificacion();
+                    try
+                    {
+                        n.Id = notif.Id;
+                        n.CreationTime = notif.CreationTime;
+
+                        // Get the app's display name
+                        string appDisplayName = notif.AppInfo.DisplayInfo.DisplayName;
+                        n.AppName = appDisplayName;
+
+                        //// Get the app's logo
+                        try
+                        {
+                            BitmapImage appLogo = new BitmapImage();
+                            RandomAccessStreamReference appLogoStream =
+                                notif.AppInfo.DisplayInfo.GetLogo(new Size(64, 64));
+                            await appLogo.SetSourceAsync(await appLogoStream.OpenReadAsync());
+                            n.Logo = appLogo;
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.WriteLine($"excepcion: app logo: {e}");
+                        }
+
+                        try
+                        {
+                            // Get the toast binding, if present
+                            NotificationBinding toastBinding =
+                                notif.Notification.Visual.GetBinding(KnownNotificationBindings.ToastGeneric);
+
+                            if (toastBinding != null)
+                            {
+                                // And then get the text elements from the toast binding
+                                IReadOnlyList<AdaptiveNotificationText> textElements = toastBinding.GetTextElements();
+
+                                // Treat the first text element as the title text
+                                string titleText = textElements.FirstOrDefault()?.Text;
+                                n.Title = titleText;
+
+                                // We'll treat all subsequent text elements as body text,
+                                // joining them together via newlines.
+                                string bodyText = string.Join("\n", textElements.Skip(1).Select(t => t.Text));
+                                n.Text = bodyText;
+
+                                // sólo si tiene algún texto
+                                if (!string.IsNullOrEmpty(bodyText) || !string.IsNullOrEmpty(titleText))
+                                {
+                                    lista.Add(n);
+                                    await ReadNotification(n);
+                                }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.WriteLine($"excepcion: leer notif: {e}");
+                        }
+
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine($"excepcion: base: {e}");
+                    }
+                }
+                lock (ListaNotificaciones)
+                {
+                    var listafull = new List<Notificacion>();
+                    foreach (var n in ListaNotificaciones)
+                        listafull.Add(n);
+                    foreach (var n in lista)
+                        listafull.Add(n);
+                    var olista = listafull.OrderByDescending(f => f.CreationTime);
+                    ListaNotificaciones.Clear();
+                    foreach (var n in olista)
+                        ListaNotificaciones.Add(n);
+                    try
+                    {
+                        _db.BeginTransaction();
+                        // solo las nuevas
+                        foreach (var n in lista)
+                            _db.Insert(new NotifId() { Id = n.Id });
+                        _db.Commit();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine($"excepcion en db: {e}");
+                        try
+                        {
+                            _db.Rollback();
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"excepcion en rollback: {ex}");
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                // ???
+                Debug.WriteLine($"excepción general: {e}");
+            }
+            finally
+            {
+                _checking = false;
+            }
+        }
+
         public async Task GetNotifications()
         {
             if (_getting == true)
@@ -297,6 +465,9 @@ namespace ReadMyNotifications.ViewModels
                     var n = new Notificacion();
                     try
                     {
+                        n.Id = notif.Id;
+                        n.CreationTime = notif.CreationTime;
+
                         // Get the app's display name
                         string appDisplayName = notif.AppInfo.DisplayInfo.DisplayName;
                         n.AppName = appDisplayName;
@@ -354,8 +525,27 @@ namespace ReadMyNotifications.ViewModels
                 lock (ListaNotificaciones)
                 {
                     ListaNotificaciones.Clear();
-                    foreach (var n in lista)
+                    foreach (var n in lista.OrderByDescending(x => x.CreationTime))
                         ListaNotificaciones.Add(n);
+                    try
+                    {
+                        _db.BeginTransaction();
+                        foreach (var n in lista)
+                            _db.Insert(new NotifId() {Id = n.Id});
+                        _db.Commit();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine($"excepcion en db: {e}");
+                        try
+                        {
+                            _db.Rollback();
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"excepcion en rollback: {ex}");
+                        }
+                    }
                 }
             }
             catch (Exception e)

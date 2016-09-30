@@ -44,7 +44,6 @@ namespace ReadMyNotifications
 
             this.Loaded += async (sender, args) =>
             {
-                await App.ViewModel.Init();
                 await App.ViewModel.GetNotifications();
             };
 
