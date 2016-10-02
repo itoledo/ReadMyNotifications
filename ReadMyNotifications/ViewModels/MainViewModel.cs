@@ -2,14 +2,18 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Background;
 using Windows.ApplicationModel.Resources;
+using Windows.Devices.Enumeration;
 using Windows.Foundation;
 using Windows.Media.Core;
+using Windows.Media.Devices;
 using Windows.Media.Playback;
 using Windows.Media.SpeechSynthesis;
+using Windows.Storage;
 using Windows.Storage.Streams;
 using Windows.System;
 using Windows.UI.Core;
@@ -352,7 +356,9 @@ namespace ReadMyNotifications.ViewModels
                 var builder = new BackgroundTaskBuilder()
                 {
                     Name = "UserNotificationChanged",
+#if MULTI_PROCESS
                     TaskEntryPoint = "ReadMyNotifications.Background.PlayNotificationTask",
+#endif
                 };
 
                 // Set the trigger for Listener, listening to Toast Notifications
@@ -698,16 +704,25 @@ namespace ReadMyNotifications.ViewModels
 
         public void StopMediaPlayer()
         {
-            if (_mediaPlayer != null)
-                _mediaPlayer.Pause();
+            Debug.WriteLine("StopMediaPlayer");
+            if (Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow == null
+                || Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.HasThreadAccess == false)
+            {
+                Debug.WriteLine("modo background, ignorando stop");
+                return;
+            }
+
             if (_mediaPlaybackList != null && _mediaPlaybackList.Items != null)
                 _mediaPlaybackList.Items.Clear();
-            Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
+            if (_mediaPlayer != null)
+                _mediaPlayer.Pause();
+            if (Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow != null
+            && Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.HasThreadAccess == true)
+                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
                 CoreDispatcherPriority.Normal,
                 () =>
                 {
                     CanPlay = true;
-                                //await ProcesarCola();
                 });
         }
 
@@ -780,19 +795,69 @@ namespace ReadMyNotifications.ViewModels
                         stream = await synth.SynthesizeTextToStreamAsync(texto);
                     }
                     Debug.WriteLine("Generando Speech: post await");
+            if (Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow != null
+                && Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.HasThreadAccess == true)
+            {
+                // Send the stream to the media object.
+                stream.Seek(0);
+                var mediaSource = MediaSource.CreateFromStream(stream, stream.ContentType);
+                var mediaPlaybackItem = new MediaPlaybackItem(mediaSource);
 
-                    // Send the stream to the media object.
-                    var mediaSource = MediaSource.CreateFromStream(stream, stream.ContentType);
-                    var mediaPlaybackItem = new MediaPlaybackItem(mediaSource);
-
-                    _mediaPlaybackList.Items.Add(mediaPlaybackItem);
-
-            if (Windows.ApplicationModel.Core.CoreApplication.MainView.Dispatcher.HasThreadAccess)
+                _mediaPlaybackList.Items.Add(mediaPlaybackItem);
                 _mediaPlayer.Play();
+            }
             else
             {
                 Debug.WriteLine("background mode");
-                BackgroundMediaPlayer.Current.Source = mediaPlaybackItem;
+
+//                var folder = ApplicationData.Current.LocalFolder;
+                var folder = KnownFolders.MusicLibrary;
+                var file = await folder.CreateFileAsync("speech.wav", CreationCollisionOption.GenerateUniqueName);
+                using (var targetStream = await file.OpenAsync(FileAccessMode.ReadWrite))
+                using (var reader = new DataReader(stream.GetInputStreamAt(0)))
+                {
+                    var os = targetStream.GetOutputStreamAt(0);
+                    await reader.LoadAsync((uint)stream.Size);
+                    while (reader.UnconsumedBufferLength > 0)
+                    {
+                        uint dataToRead = reader.UnconsumedBufferLength > 64
+                                        ? 64
+                                        : reader.UnconsumedBufferLength;
+
+                        IBuffer buffer = reader.ReadBuffer(dataToRead);
+
+                        await os.WriteAsync(buffer);
+                    }
+                    await os.FlushAsync();
+                }
+
+                var player = new MediaPlayer();
+                player.PlaybackSession.PlaybackStateChanged +=
+                    (sender, args) => Debug.WriteLine($"Background Player: state: {player.PlaybackSession.PlaybackState}");
+                player.MediaFailed +=
+                    (sender, args) => Debug.WriteLine($"media failed: {args.Error} - {args.ErrorMessage}");
+                //var player = BackgroundMediaPlayer.Current;
+                player.AudioCategory = MediaPlayerAudioCategory.Speech;
+                //var uri = new Uri("ms-appdata:///local/" + file.Name);
+                //                var src = MediaSource.CreateFromStorageFile(file);
+                 //var src = MediaSource.CreateFromUri(new Uri("ms-appx:///Assets/Alarm01.wav"));
+                //var src = MediaSource.CreateFromUri(uri);
+                stream.Seek(0);
+                var src = MediaSource.CreateFromStream(stream, stream.ContentType);
+                //player.SetUriSource(uri);
+                player.Source = src;
+
+                string audioSelector = MediaDevice.GetAudioRenderSelector();
+                var outputDevices = await DeviceInformation.FindAllAsync(audioSelector);
+                foreach (var device in outputDevices)
+                {
+                    Debug.WriteLine($"dev: {device.Id} - {device.Name}");
+                }
+                player.AudioDevice = outputDevices[2];
+
+                player.Play();
+                //BackgroundMediaPlayer.Current.Source = mediaPlaybackItem;
+                //BackgroundMediaPlayer.Current.Play();
             }
                 //});
         }

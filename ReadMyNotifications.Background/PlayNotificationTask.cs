@@ -28,8 +28,11 @@ namespace ReadMyNotifications.Background
 
             // Send the stream to the media object.
             var mediaSource = MediaSource.CreateFromStream(stream, stream.ContentType);
-            BackgroundMediaPlayer.Current.Source = mediaSource;
-            BackgroundMediaPlayer.Current.Play();
+            var mediaPlayer = new MediaPlayer();
+            mediaPlayer.Source = mediaSource;
+            mediaPlayer.Play();
+            //BackgroundMediaPlayer.Current.Source = mediaSource;
+            //BackgroundMediaPlayer.Current.Play();
 
             _deferral.Complete();
         }

@@ -98,6 +98,7 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
+    <Content Include="Assets\Alarm01.wav" />
     <Content Include="Assets\birdie_logo_v3.png" />
     <Content Include="Assets\iconReadNotifications.png" />
     <Content Include="ComandosVoz.xml" />
@@ -195,12 +196,6 @@
     <SDKReference Include="WindowsMobile, Version=10.0.14393.0">
       <Name>Windows Mobile Extensions for the UWP</Name>
     </SDKReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\ReadMyNotifications.Background\ReadMyNotifications.Background.csproj">
-      <Project>{0ec3145c-b8f9-49b8-b61a-bc0178026509}</Project>
-      <Name>ReadMyNotifications.Background</Name>
-    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
