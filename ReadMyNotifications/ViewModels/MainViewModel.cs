@@ -9,9 +9,11 @@ using Windows.ApplicationModel.Background;
 using Windows.ApplicationModel.Resources;
 using Windows.Devices.Enumeration;
 using Windows.Foundation;
+using Windows.Media.Audio;
 using Windows.Media.Core;
 using Windows.Media.Devices;
 using Windows.Media.Playback;
+using Windows.Media.Render;
 using Windows.Media.SpeechSynthesis;
 using Windows.Storage;
 using Windows.Storage.Streams;
@@ -809,9 +811,8 @@ namespace ReadMyNotifications.ViewModels
             else
             {
                 Debug.WriteLine("background mode");
-
-//                var folder = ApplicationData.Current.LocalFolder;
-                var folder = KnownFolders.MusicLibrary;
+                var folder = ApplicationData.Current.TemporaryFolder;
+//                var folder = KnownFolders.MusicLibrary;
                 var file = await folder.CreateFileAsync("speech.wav", CreationCollisionOption.GenerateUniqueName);
                 using (var targetStream = await file.OpenAsync(FileAccessMode.ReadWrite))
                 using (var reader = new DataReader(stream.GetInputStreamAt(0)))
@@ -831,6 +832,53 @@ namespace ReadMyNotifications.ViewModels
                     await os.FlushAsync();
                 }
 
+                AudioGraph graph;
+        AudioFileInputNode fileInput;
+        AudioDeviceOutputNode deviceOutput;
+
+
+        AudioGraphSettings settings = new AudioGraphSettings(AudioRenderCategory.Media);
+                CreateAudioGraphResult result = await AudioGraph.CreateAsync(settings);
+                if (result.Status != AudioGraphCreationStatus.Success)
+                {
+                    Debug.WriteLine($"audiograph failed");
+                    return;
+                }
+                graph = result.Graph;
+
+                // Create a device output node
+                CreateAudioDeviceOutputNodeResult deviceOutputNodeResult = await graph.CreateDeviceOutputNodeAsync();
+
+                if (deviceOutputNodeResult.Status != AudioDeviceNodeCreationStatus.Success)
+                {
+                    // Cannot create device output node
+                    Debug.WriteLine($"audiograph failed: deviceoutput");
+                    return;
+                }
+
+                deviceOutput = deviceOutputNodeResult.DeviceOutputNode;
+
+                var nfile = await folder.GetFileAsync(file.Name);
+                Debug.WriteLine($"file: {nfile.Name} - {nfile.IsAvailable}");
+
+                CreateAudioFileInputNodeResult fileInputResult = await graph.CreateFileInputNodeAsync(nfile);
+                if (AudioFileNodeCreationStatus.Success != fileInputResult.Status)
+                {
+                    Debug.WriteLine($"audiograph failed: fileinput: {fileInputResult.Status}");
+                    return;
+                }
+                fileInput = fileInputResult.FileInputNode;
+                fileInput.AddOutgoingConnection(deviceOutput);
+                fileInput.StartTime = TimeSpan.FromSeconds(0);
+
+                graph.UnrecoverableErrorOccurred +=
+                    (sender, args) => Debug.WriteLine("audiograph: unrec error: " + args);
+
+                graph.Start();
+
+                await Task.Delay(30000);
+
+#if MEDIAPLAYER
                 var player = new MediaPlayer();
                 player.PlaybackSession.PlaybackStateChanged +=
                     (sender, args) => Debug.WriteLine($"Background Player: state: {player.PlaybackSession.PlaybackState}");
@@ -858,8 +906,10 @@ namespace ReadMyNotifications.ViewModels
                 player.Play();
                 //BackgroundMediaPlayer.Current.Source = mediaPlaybackItem;
                 //BackgroundMediaPlayer.Current.Play();
+#endif
             }
                 //});
+                Debug.WriteLine("fin reproducir: " + texto);
         }
 
         private async void MediaPlayerOnMediaEnded(MediaPlayer sender, object args)
