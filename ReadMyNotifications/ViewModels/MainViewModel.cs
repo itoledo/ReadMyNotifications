@@ -1,4 +1,5 @@
-﻿using System;
+﻿#define MEDIAPLAYER
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -27,6 +28,7 @@ using MyToolkit.Mvvm;
 using ReadMyNotifications.Language;
 using ReadMyNotifications.Utils;
 using SQLite;
+using Windows.Media;
 
 namespace ReadMyNotifications.ViewModels
 {
@@ -832,6 +834,7 @@ namespace ReadMyNotifications.ViewModels
                     await os.FlushAsync();
                 }
 
+#if AUDIOGRAPH
                 AudioGraph graph;
         AudioFileInputNode fileInput;
         AudioDeviceOutputNode deviceOutput;
@@ -877,24 +880,30 @@ namespace ReadMyNotifications.ViewModels
                 graph.Start();
 
                 await Task.Delay(30000);
+#endif
 
 #if MEDIAPLAYER
                 var player = new MediaPlayer();
+                var smtc = player.SystemMediaTransportControls;
+                smtc.ButtonPressed += SMTC_ButtonPressed;
+                smtc.PropertyChanged += SMTC_PropertyChanged;
+                smtc.IsEnabled = true;
+                smtc.IsStopEnabled = true;
+                smtc.IsPauseEnabled = true;
+                smtc.IsPlayEnabled = true;
+                smtc.IsNextEnabled = true;
+                smtc.IsPreviousEnabled = true;
+                Debug.Write("SoundLevel: " + smtc.SoundLevel);
                 player.PlaybackSession.PlaybackStateChanged +=
                     (sender, args) => Debug.WriteLine($"Background Player: state: {player.PlaybackSession.PlaybackState}");
                 player.MediaFailed +=
                     (sender, args) => Debug.WriteLine($"media failed: {args.Error} - {args.ErrorMessage}");
-                //var player = BackgroundMediaPlayer.Current;
-                player.AudioCategory = MediaPlayerAudioCategory.Speech;
-                //var uri = new Uri("ms-appdata:///local/" + file.Name);
-                //                var src = MediaSource.CreateFromStorageFile(file);
-                 //var src = MediaSource.CreateFromUri(new Uri("ms-appx:///Assets/Alarm01.wav"));
-                //var src = MediaSource.CreateFromUri(uri);
+                player.AudioCategory = MediaPlayerAudioCategory.GameChat;
                 stream.Seek(0);
                 var src = MediaSource.CreateFromStream(stream, stream.ContentType);
-                //player.SetUriSource(uri);
                 player.Source = src;
 
+#if DEVICES
                 string audioSelector = MediaDevice.GetAudioRenderSelector();
                 var outputDevices = await DeviceInformation.FindAllAsync(audioSelector);
                 foreach (var device in outputDevices)
@@ -902,6 +911,7 @@ namespace ReadMyNotifications.ViewModels
                     Debug.WriteLine($"dev: {device.Id} - {device.Name}");
                 }
                 player.AudioDevice = outputDevices[2];
+#endif
 
                 player.Play();
                 //BackgroundMediaPlayer.Current.Source = mediaPlaybackItem;
@@ -910,6 +920,18 @@ namespace ReadMyNotifications.ViewModels
             }
                 //});
                 Debug.WriteLine("fin reproducir: " + texto);
+        }
+
+        private void SMTC_PropertyChanged(SystemMediaTransportControls sender, SystemMediaTransportControlsPropertyChangedEventArgs args)
+        {
+            Debug.WriteLine($"SMTC: PropertyChanged: {args.Property}");
+            if (args.Property == SystemMediaTransportControlsProperty.SoundLevel)
+                Debug.WriteLine($"sound level: {sender.SoundLevel}");
+        }
+
+        private void SMTC_ButtonPressed(SystemMediaTransportControls sender, SystemMediaTransportControlsButtonPressedEventArgs args)
+        {
+            Debug.WriteLine("SMTC: button pressed");
         }
 
         private async void MediaPlayerOnMediaEnded(MediaPlayer sender, object args)
