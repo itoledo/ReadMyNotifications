@@ -1087,7 +1087,7 @@ namespace ReadMyNotifications.ViewModels
             Debug.WriteLine("SMTC: button pressed");
         }
 
-        private async void MediaPlayerOnMediaEnded(MediaPlayer sender, object args)
+        private void MediaPlayerOnMediaEnded(MediaPlayer sender, object args)
         {
             Debug.WriteLine("MediaElementOnMediaEnded");
 
