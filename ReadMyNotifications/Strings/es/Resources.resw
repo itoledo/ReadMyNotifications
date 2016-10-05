@@ -79,4 +79,10 @@
   <data name="ErrorGet" xml:space="preserve">
     <value>Ocurrió un error al obtener tus notificaciones, por favor reintenta en unos momentos.</value>
   </data>
+  <data name="AppNotRunning" xml:space="preserve">
+    <value>Lee mis Notificaciones no se está ejecutando</value>
+  </data>
+  <data name="SelectToRead" xml:space="preserve">
+    <value>Selecciona para leer tus notificaciones</value>
+  </data>
 </root>

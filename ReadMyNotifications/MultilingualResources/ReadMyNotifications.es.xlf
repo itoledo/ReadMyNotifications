@@ -95,6 +95,14 @@
           <source>There has been an error getting your notifications, please try again.</source>
           <target state="translated">Ocurrió un error al obtener tus notificaciones, por favor reintenta en unos momentos.</target>
         </trans-unit>
+        <trans-unit id="AppNotRunning" translate="yes" xml:space="preserve">
+          <source>Read my Notifications is not running</source>
+          <target state="translated">Lee mis Notificaciones no se está ejecutando</target>
+        </trans-unit>
+        <trans-unit id="SelectToRead" translate="yes" xml:space="preserve">
+          <source>Select to read your notifications</source>
+          <target state="translated">Selecciona para leer tus notificaciones</target>
+        </trans-unit>
       </group>
     </body>
   </file>

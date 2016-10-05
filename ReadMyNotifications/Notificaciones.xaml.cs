@@ -41,11 +41,6 @@ namespace ReadMyNotifications
             //};
         }
 
-        public async void ReadNotifications()
-        {
-            await App.ViewModel.ReadNotifications();
-        }
-
         private async void Lista_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.AddedItems == null || e.AddedItems.Count == 0)
@@ -69,7 +64,7 @@ namespace ReadMyNotifications
 
         private async void Read_OnClick(object sender, RoutedEventArgs e)
         {
-            await App.ViewModel.ReadNotifications();
+            await App.ViewModel.ReadNotifications(MainViewModel.ReadType.ReadAll);
         }
 
         private void Stop_OnClick(object sender, RoutedEventArgs e)

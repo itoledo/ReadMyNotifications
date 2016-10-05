@@ -11,6 +11,7 @@ using Windows.ApplicationModel.VoiceCommands;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Phone.Media.Devices;
+using Windows.UI.Notifications;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -19,6 +20,7 @@ using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using Microsoft.HockeyApp;
+using Microsoft.QueryStringDotNET;
 using ReadMyNotifications.Utils;
 using ReadMyNotifications.ViewModels;
 
@@ -89,6 +91,9 @@ namespace ReadMyNotifications
                     // parameter
                     rootFrame.Navigate(typeof(MainPage), e.Arguments);
                 }
+
+                ToastNotificationManager.History.RemoveGroup("RMN");
+
                 // Ensure the current window is active
                 Window.Current.Activate();
             }
@@ -152,6 +157,19 @@ namespace ReadMyNotifications
                 if (voiceArgs.Result.RulePath.ToList().Contains("Read"))
                 {
                     navigationCommand = "read";
+                    ToastNotificationManager.History.RemoveGroup("RMN");
+                }
+            }
+            if (args is ToastNotificationActivatedEventArgs)
+            {
+                ToastNotificationActivatedEventArgs toastArgs = (ToastNotificationActivatedEventArgs) args;
+                QueryString qa = QueryString.Parse(toastArgs.Argument);
+                switch (qa["action"])
+                {
+                    case "ToastRead":
+                        navigationCommand = "read";
+                        ToastNotificationManager.History.RemoveGroup("RMN");
+                        break;
                 }
             }
 
@@ -184,6 +202,21 @@ namespace ReadMyNotifications
             //base.OnBackgroundActivated(args);
 
             var deferral = args.TaskInstance.GetDeferral();
+
+#if BACKGROUND_TOAST
+            bool launchedFromToast = false;
+
+            var details = args.TaskInstance.TriggerDetails as ToastNotificationActionTriggerDetail;
+
+            if (details != null)
+            {
+                //string arguments = details.Argument;
+                //var userInput = details.UserInput;
+
+                // Perform tasks
+                launchedFromToast = true;
+            }
+#endif
 
             try
             {
@@ -227,6 +260,7 @@ namespace ReadMyNotifications
                 }
 
 
+
                 try
                 {
                     await ViewModel.Init();
@@ -234,14 +268,41 @@ namespace ReadMyNotifications
                 catch (Exception e)
                 {
                     Debug.WriteLine($"OnBackgroundActivated: excepcion: {e}");
-                    deferral.Complete();
                     return;
                 }
 
+                // no tiene sentido hacer todo el ejercicio si no va a sonar nada
+                if ((Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow == null
+                || Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.HasThreadAccess == false)
+#if BACKGROUND_TOAST
+                && (launchedFromToast == false)
+#endif
+                )
+//                || (DeviceTypeHelper.GetDeviceFormFactorType() != DeviceFormFactorType.Phone && ViewModel.IsSMTCMuted()))
+                {
+                    // no va a sonar nada
+                    var history = ToastNotificationManager.History.GetHistory();
+                    var existe = (from n in history where n.Group == "RMN" && n.Tag == "BR" select n).FirstOrDefault();
+                    if (existe == null)
+                    {
+                        Debug.WriteLine("sending toast");
+                        ViewModel.SendToast();
+                    }
+                    return;
+                }
+
+                Debug.WriteLine($"Task Name: {args.TaskInstance.Task.Name}");
                 switch (args.TaskInstance.Task.Name)
                 {
                     case "UserNotificationChanged":
-                        await ViewModel.CheckNewNotifications();
+                    case "ToastAction":
+                        await ViewModel.CheckNewNotifications(
+#if BACKGROUND_TOAST
+                            launchedFromToast
+#else
+                            false
+#endif
+                            );
                         break;
                 }
             }

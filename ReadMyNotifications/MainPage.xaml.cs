@@ -25,6 +25,7 @@ using Windows.UI.Xaml.Navigation;
 using ReadMyNotifications.Language;
 using Windows.UI.ViewManagement;
 using Windows.UI;
+using ReadMyNotifications.ViewModels;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -60,7 +61,7 @@ namespace ReadMyNotifications
             if (e.Parameter != null && e.Parameter.Equals("read"))
             {
                 await App.ViewModel.GetNotifications();
-                await App.ViewModel.ReadNotifications();
+                await App.ViewModel.ReadNotifications(MainViewModel.ReadType.ReadNew);
             }
         }
 
@@ -88,11 +89,6 @@ namespace ReadMyNotifications
             var f = new Frame();
             MySplitView.Content = f;
             f.Navigate(typeof(AcercaDe));
-        }
-
-        private void Read_OnClick(object sender, RoutedEventArgs e)
-        {
-            
         }
     }
 }

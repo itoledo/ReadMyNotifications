@@ -1,4 +1,5 @@
 ﻿#define MEDIAPLAYER
+// #define SPEECH_WRITE_FILE
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -373,6 +374,26 @@ namespace ReadMyNotifications.ViewModels
                 // Register the task
                 builder.Register();
             }
+
+#if BACKGROUND_TOAST
+            if (!BackgroundTaskRegistration.AllTasks.Any(i => i.Value.Name.Equals("ToastAction")))
+            {
+                // Specify the background task
+                var builder = new BackgroundTaskBuilder()
+                {
+                    Name = "ToastAction",
+#if MULTI_PROCESS
+                    TaskEntryPoint = "ReadMyNotifications.Background.PlayNotificationTask",
+#endif
+                };
+
+                // Set the trigger for Listener, listening to Toast Notifications
+                builder.SetTrigger(new ToastNotificationActionTrigger());
+
+                // Register the task
+                builder.Register();
+            }
+#endif
         }
 
         private Boolean _getting = false;
@@ -389,7 +410,7 @@ namespace ReadMyNotifications.ViewModels
 
         private bool _checking = false;
 
-        public async Task CheckNewNotifications()
+        public async Task CheckNewNotifications(bool launchedFromToast)
         {
             if (_checking == true)
             {
@@ -480,7 +501,6 @@ namespace ReadMyNotifications.ViewModels
                                 if (!string.IsNullOrEmpty(bodyText) || !string.IsNullOrEmpty(titleText))
                                 {
                                     lista.Add(n);
-                                    await ReadNotification(n);
                                 }
                             }
                         }
@@ -495,6 +515,32 @@ namespace ReadMyNotifications.ViewModels
                         Debug.WriteLine($"excepcion: base: {e}");
                     }
                 }
+
+                // a leer y commitear todas juntas
+                try
+                {
+                    foreach (var n in lista)
+                        await ReadNotification(n, launchedFromToast);
+
+                    // solo las nuevas
+                    _db.BeginTransaction();
+                    foreach (var n in lista)
+                        _db.InsertOrReplace(new NotifId() { Id = n.Id });
+                    _db.Commit();
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine($"excepcion en db: {e}");
+                    try
+                    {
+                        _db.Rollback();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"excepcion en rollback: {ex}");
+                    }
+                }
+
                 lock (ListaNotificaciones)
                 {
                     var listafull = new List<Notificacion>();
@@ -506,26 +552,6 @@ namespace ReadMyNotifications.ViewModels
                     ListaNotificaciones.Clear();
                     foreach (var n in olista)
                         ListaNotificaciones.Add(n);
-                    try
-                    {
-                        _db.BeginTransaction();
-                        // solo las nuevas
-                        foreach (var n in lista)
-                            _db.Insert(new NotifId() { Id = n.Id });
-                        _db.Commit();
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine($"excepcion en db: {e}");
-                        try
-                        {
-                            _db.Rollback();
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"excepcion en rollback: {ex}");
-                        }
-                    }
                 }
             }
             catch (Exception e)
@@ -644,7 +670,7 @@ namespace ReadMyNotifications.ViewModels
                     {
                         _db.BeginTransaction();
                         foreach (var n in lista)
-                            _db.Insert(new NotifId() {Id = n.Id});
+                            _db.InsertOrReplace(new NotifId() {Id = n.Id});
                         _db.Commit();
                     }
                     catch (Exception e)
@@ -672,12 +698,26 @@ namespace ReadMyNotifications.ViewModels
             }
         }
 
-        public async Task ReadNotifications()
+        public enum ReadType
+        {
+            ReadAll,
+            ReadNew
+        }
+
+        public bool IsNotificationInDb(uint id)
+        {
+            var existe = _db.Table<NotifId>().FirstOrDefault(z => z.Id == id);
+            return existe != null;
+        }
+
+        public async Task ReadNotifications(ReadType read)
         {
             int cnt = 0;
             foreach (var n in ListaNotificaciones)
             {
-                await ReadNotification(n);
+                if (read == ReadType.ReadAll || !IsNotificationInDb(n.Id))
+                    await ReadNotification(n);
+
                 cnt++;
             }
             if (cnt == 0)
@@ -686,21 +726,21 @@ namespace ReadMyNotifications.ViewModels
                 await Speak(_l.GetString("ReadEnd"));
         }
 
-        public async Task ReadNotification(Notificacion n)
+        public async Task ReadNotification(Notificacion n, bool launchedFromToast = false)
         {
             // _l.GetString("From") + " " + 
-            await Speak(n.AppName);
-            await Speak($"{n.Title}. {n.Text}");
+            await Speak(n.AppName, launchedFromToast);
+            await Speak($"{n.Title}. {n.Text}", launchedFromToast);
         }
 
         private bool _playing = false;
 
-        public async Task Speak(string texto)
+        public async Task Speak(string texto, bool launchedFromToast = false)
         {
             Debug.WriteLine("Speak: " + texto);
             // The media object for controlling and playing audio.
 
-            await Reproducir(texto);
+            await Reproducir(texto, launchedFromToast);
         }
 
         public bool CanPlay
@@ -715,6 +755,7 @@ namespace ReadMyNotifications.ViewModels
                 || Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.HasThreadAccess == false)
             {
                 Debug.WriteLine("modo background, ignorando stop");
+                _playing = false;
                 return;
             }
 
@@ -748,7 +789,12 @@ namespace ReadMyNotifications.ViewModels
             }
         }
 
-        public async Task Reproducir(string texto)
+        public bool IsSMTCMuted()
+        {
+            return _mediaPlayer.SystemMediaTransportControls.SoundLevel == SoundLevel.Muted;
+        }
+
+        public async Task Reproducir(string texto, bool launchedFromToast = false)
         {
             Debug.WriteLine("Reproducir: " + texto);
 
@@ -819,9 +865,11 @@ namespace ReadMyNotifications.ViewModels
             {
                 Debug.WriteLine("background mode");
 #if SPEECH_WRITE_FILE
-                var folder = ApplicationData.Current.TemporaryFolder;
-//                var folder = KnownFolders.MusicLibrary;
-                var file = await folder.CreateFileAsync("speech.wav", CreationCollisionOption.GenerateUniqueName);
+                //                var folder = ApplicationData.Current.TemporaryFolder;
+                //                var folder = KnownFolders.MusicLibrary;
+                var folder = Windows.ApplicationModel.Package.Current.InstalledLocation;
+                folder = await folder.GetFolderAsync("Assets");
+                var file = await folder.CreateFileAsync("speech.wav", CreationCollisionOption.ReplaceExisting);
                 using (var targetStream = await file.OpenAsync(FileAccessMode.ReadWrite))
                 using (var reader = new DataReader(stream.GetInputStreamAt(0)))
                 {
@@ -839,6 +887,9 @@ namespace ReadMyNotifications.ViewModels
                     }
                     await os.FlushAsync();
                 }
+//                var fileUri = new Uri("ms-appdata:///local/" + file.Name);
+//                var fileUri = new Uri("ms-appx:///Assets/Alarm01.wav");
+                var fileUri = new Uri("ms-appx:///Assets/" + Uri.EscapeDataString(file.Name));
 #endif
 #if AUDIOGRAPH
                 AudioGraph graph;
@@ -889,13 +940,13 @@ namespace ReadMyNotifications.ViewModels
 #endif
 
 #if MEDIAPLAYER
-//                var player = new MediaPlayer();
+                //                var player = new MediaPlayer();
                 var player = _mediaPlayer;
                 var smtc = player.SystemMediaTransportControls;
 //                var player = BackgroundMediaPlayer.Current;
 //                var smtc = BackgroundMediaPlayer.Current.SystemMediaTransportControls;
                 //var smtc = SystemMediaTransportControls.GetForCurrentView();
-                smtc.ButtonPressed += SMTC_ButtonPressed;
+//                smtc.ButtonPressed += SMTC_ButtonPressed;
                 //smtc.PropertyChanged += SMTC_PropertyChanged;
                 //smtc.IsEnabled = true;
                 //smtc.IsStopEnabled = true;
@@ -945,56 +996,11 @@ namespace ReadMyNotifications.ViewModels
 #endif
 
                 // esto no funciona en mobile
-                if (DeviceTypeHelper.GetDeviceFormFactorType() != DeviceFormFactorType.Phone && smtc.SoundLevel != SoundLevel.Muted)
+                if (launchedFromToast == true || (DeviceTypeHelper.GetDeviceFormFactorType() != DeviceFormFactorType.Phone && smtc.SoundLevel != SoundLevel.Muted))
                     player.Play();
                 else
                 {
-                    // mostremos un toast con la esperanza de que el usuario haga algo
-                    ToastVisual visual = new ToastVisual()
-                    {
-                        BindingGeneric = new ToastBindingGeneric()
-                        {
-                            Children =
-                            {
-                                new AdaptiveText()
-                                {
-                                    Text = "The app isn't running!"
-                                },
-
-                                new AdaptiveText()
-                                {
-                                    Text = "Select this notification to hear your notifications"
-                                },
-
-                                //new AdaptiveImage()
-                                //{
-                                //    Source = image
-                                //}
-                            },
-                            //AppLogoOverride = new ToastGenericAppLogo()
-                            //{
-                            //    Source = logo,
-                            //    HintCrop = ToastGenericAppLogoCrop.Circle
-                            //}
-                        }
-                    };
-                    ToastContent toastContent = new ToastContent()
-                    {
-                        Visual = visual,
-                        ActivationType = ToastActivationType.Background,
-                        //Actions = actions,
-
-                        // Arguments when the user taps body of toast
-                        Launch = new QueryString()
-                        {
-                            { "action", "ToastRead" },
-                            //{ "conversationId", conversationId.ToString() }
-
-                        }.ToString()
-                    };
-                    var toast = new ToastNotification(toastContent.GetXml());
-                    ToastNotificationManager.CreateToastNotifier().Show(toast);
-                    await Task.Delay(30000);
+                    SendToast();
                 }
                 //BackgroundMediaPlayer.Current.Source = mediaPlaybackItem;
                 //BackgroundMediaPlayer.Current.Play();
@@ -1009,6 +1015,71 @@ namespace ReadMyNotifications.ViewModels
             Debug.WriteLine($"SMTC: PropertyChanged: {args.Property}");
             if (args.Property == SystemMediaTransportControlsProperty.SoundLevel)
                 Debug.WriteLine($"sound level: {sender.SoundLevel}");
+        }
+
+        public void SendToast()
+        {
+            // mostremos un toast con la esperanza de que el usuario haga algo
+            ToastVisual visual = new ToastVisual()
+            {
+                BindingGeneric = new ToastBindingGeneric()
+                {
+                    Children =
+                            {
+                                new AdaptiveText()
+                                {
+                                    Text = _l.GetString("AppNotRunning") // "Read My Notifications is not running")
+                                },
+
+                                new AdaptiveText()
+                                {
+                                    Text = _l.GetString("SelectToRead") // "Select to read your notifications")
+                                },
+
+                                //new AdaptiveImage()
+                                //{
+                                //    Source = image
+                                //}
+                            },
+                    AppLogoOverride = new ToastGenericAppLogo()
+                    {
+                        Source = "ms-appx:///Assets/StoreLogo.png"
+                    }
+                    //AppLogoOverride = new ToastGenericAppLogo()
+                    //{
+                    //    Source = logo,
+                    //    HintCrop = ToastGenericAppLogoCrop.Circle
+                    //}
+                }
+            };
+            //var ta = new ToastAudio();
+            //ta.Loop = false;
+            //ta.Silent = false;
+            //ta.Src = fileUri;
+            ToastContent toastContent = new ToastContent()
+            {
+                Visual = visual,
+                ActivationType = ToastActivationType.Foreground,
+                //Actions = actions,
+
+                // Arguments when the user taps body of toast
+                Launch = new QueryString()
+                        {
+                            { "action", "ToastRead" },
+                            //{ "conversationId", conversationId.ToString() }
+
+                        }.ToString(),
+
+                Scenario = ToastScenario.Default,
+                //Audio = ta
+            };
+            var toast = new ToastNotification(toastContent.GetXml());
+            toast.SuppressPopup = false;
+            toast.Group = "RMN";
+            toast.Tag = "BR";
+            ToastNotificationManager.History.RemoveGroup("RMN");
+            ToastNotificationManager.CreateToastNotifier().Show(toast);
+            //await Task.Delay(10000);
         }
 
         private void SMTC_ButtonPressed(SystemMediaTransportControls sender, SystemMediaTransportControlsButtonPressedEventArgs args)
