@@ -29,6 +29,8 @@ using ReadMyNotifications.Language;
 using ReadMyNotifications.Utils;
 using SQLite;
 using Windows.Media;
+using Microsoft.QueryStringDotNET;
+using Microsoft.Toolkit.Uwp.Notifications;
 
 namespace ReadMyNotifications.ViewModels
 {
@@ -735,11 +737,14 @@ namespace ReadMyNotifications.ViewModels
             if (_mediaPlayer == null)
             {
                 _mediaPlayer = new MediaPlayer();
-                _mediaPlayer.AudioCategory = MediaPlayerAudioCategory.Speech;
+                _mediaPlayer.AudioCategory = MediaPlayerAudioCategory.Communications;
                 _mediaPlaybackList = new MediaPlaybackList();
                 _mediaPlayer.Source = _mediaPlaybackList;
-                _mediaPlayer.MediaEnded -= MediaPlayerOnMediaEnded;
+                //_mediaPlayer.MediaEnded -= MediaPlayerOnMediaEnded;
                 _mediaPlayer.MediaEnded += MediaPlayerOnMediaEnded;
+                _mediaPlayer.MediaFailed +=
+                    (sender, args) => Debug.WriteLine($"media failed: {args.Error} - {args.ErrorMessage}");
+
             }
         }
 
@@ -887,10 +892,10 @@ namespace ReadMyNotifications.ViewModels
 //                var player = new MediaPlayer();
                 var player = _mediaPlayer;
                 var smtc = player.SystemMediaTransportControls;
-                // var player = BackgroundMediaPlayer.Current;
-                //                var smtc = BackgroundMediaPlayer.Current.SystemMediaTransportControls;
+//                var player = BackgroundMediaPlayer.Current;
+//                var smtc = BackgroundMediaPlayer.Current.SystemMediaTransportControls;
                 //var smtc = SystemMediaTransportControls.GetForCurrentView();
-                //smtc.ButtonPressed += SMTC_ButtonPressed;
+                smtc.ButtonPressed += SMTC_ButtonPressed;
                 //smtc.PropertyChanged += SMTC_PropertyChanged;
                 //smtc.IsEnabled = true;
                 //smtc.IsStopEnabled = true;
@@ -913,10 +918,10 @@ namespace ReadMyNotifications.ViewModels
                 //player.MediaFailed +=
                 //    (sender, args) => Debug.WriteLine($"media failed: {args.Error} - {args.ErrorMessage}");
                 //var player = BackgroundMediaPlayer.Current;
-                player.AudioCategory = MediaPlayerAudioCategory.Alerts;
+                //player.AudioCategory = MediaPlayerAudioCategory.Speech;
                 //player.IsMutedChanged += (sender, args) => Debug.WriteLine($"IsMutedChanged: {player.IsMuted}");
-                Debug.WriteLine($"player.IsMuted: {player.IsMuted}");
-                player.IsMuted = false;
+                //Debug.WriteLine($"player.IsMuted: {player.IsMuted}");
+                //player.IsMuted = false;
                 //var uri = new Uri("ms-appdata:///local/" + file.Name);
                 //                var src = MediaSource.CreateFromStorageFile(file);
                  //var src = MediaSource.CreateFromUri(new Uri("ms-appx:///Assets/Alarm01.wav"));
@@ -939,7 +944,58 @@ namespace ReadMyNotifications.ViewModels
                 player.AudioDevice = outputDevices[2];
 #endif
 
-                player.Play();
+                // esto no funciona en mobile
+                if (DeviceTypeHelper.GetDeviceFormFactorType() != DeviceFormFactorType.Phone && smtc.SoundLevel != SoundLevel.Muted)
+                    player.Play();
+                else
+                {
+                    // mostremos un toast con la esperanza de que el usuario haga algo
+                    ToastVisual visual = new ToastVisual()
+                    {
+                        BindingGeneric = new ToastBindingGeneric()
+                        {
+                            Children =
+                            {
+                                new AdaptiveText()
+                                {
+                                    Text = "The app isn't running!"
+                                },
+
+                                new AdaptiveText()
+                                {
+                                    Text = "Select this notification to hear your notifications"
+                                },
+
+                                //new AdaptiveImage()
+                                //{
+                                //    Source = image
+                                //}
+                            },
+                            //AppLogoOverride = new ToastGenericAppLogo()
+                            //{
+                            //    Source = logo,
+                            //    HintCrop = ToastGenericAppLogoCrop.Circle
+                            //}
+                        }
+                    };
+                    ToastContent toastContent = new ToastContent()
+                    {
+                        Visual = visual,
+                        ActivationType = ToastActivationType.Background,
+                        //Actions = actions,
+
+                        // Arguments when the user taps body of toast
+                        Launch = new QueryString()
+                        {
+                            { "action", "ToastRead" },
+                            //{ "conversationId", conversationId.ToString() }
+
+                        }.ToString()
+                    };
+                    var toast = new ToastNotification(toastContent.GetXml());
+                    ToastNotificationManager.CreateToastNotifier().Show(toast);
+                    await Task.Delay(30000);
+                }
                 //BackgroundMediaPlayer.Current.Source = mediaPlaybackItem;
                 //BackgroundMediaPlayer.Current.Play();
 #endif
