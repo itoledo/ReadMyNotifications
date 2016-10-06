@@ -186,6 +186,15 @@
   <data name="ToggleAutoLanguage.Header" xml:space="preserve">
     <value>Automatic language detection</value>
   </data>
+  <data name="ToggleBluetooth.Header" xml:space="preserve">
+    <value>...when bluetooth is connected</value>
+  </data>
+  <data name="ToggleHeadPhones.Header" xml:space="preserve">
+    <value>...when headphones are connected</value>
+  </data>
+  <data name="ToggleSpeaker.Header" xml:space="preserve">
+    <value>...when speakers are connected</value>
+  </data>
   <data name="Webpage.Content" xml:space="preserve">
     <value>Visit our webpage</value>
   </data>

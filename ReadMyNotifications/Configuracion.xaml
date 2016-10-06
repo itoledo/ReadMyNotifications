@@ -23,10 +23,10 @@
         <ToggleSwitch x:Uid="ToggleAutoLanguage" Header="Automatic language detection" IsOn="{Binding DeteccionAutomatica, Mode=TwoWay}"/>
         <TextBlock x:Uid="AutoLangHint" Text="Detect the language of each phrase, and select the voice that matches that language among all installed voices on the system." FontWeight="ExtraLight" TextWrapping="WrapWholeWords"/>
         <ToggleSwitch x:Uid="ToggleBackground" Header="Read notifications in background" IsOn="{Binding LeerEnBackground, Mode=TwoWay}"/>
-        <StackPanel Orientation="Vertical" Visibility="{Binding IsPhone}">
-            <ToggleSwitch x:Uid="ToggleSpeaker" Header="when speakers are connected" IsOn="{Binding LeerSpeaker, Mode=TwoWay}" Visibility="{Binding LeerEnBackground, Converter={StaticResource VisibilityConverter}}"/>
-            <ToggleSwitch x:Uid="ToggleHeadPhones" Header="when headphones are connected" IsOn="{Binding LeerHeadphones, Mode=TwoWay}" Visibility="{Binding LeerEnBackground, Converter={StaticResource VisibilityConverter}}"/>
-            <ToggleSwitch x:Uid="ToggleBluetooth" Header="when bluetooth is connected" IsOn="{Binding LeerBluetooth, Mode=TwoWay}" Visibility="{Binding LeerEnBackground, Converter={StaticResource VisibilityConverter}}"/>
+        <StackPanel Orientation="Vertical" Visibility="{Binding IsPhone}" Margin="15,0,0,0">
+            <ToggleSwitch x:Uid="ToggleSpeaker" Header="...when speakers are connected" IsOn="{Binding LeerSpeaker, Mode=TwoWay}" Visibility="{Binding LeerEnBackground, Converter={StaticResource VisibilityConverter}}"/>
+            <ToggleSwitch x:Uid="ToggleHeadPhones" Header="...when headphones are connected" IsOn="{Binding LeerHeadphones, Mode=TwoWay}" Visibility="{Binding LeerEnBackground, Converter={StaticResource VisibilityConverter}}"/>
+            <ToggleSwitch x:Uid="ToggleBluetooth" Header="...when bluetooth is connected" IsOn="{Binding LeerBluetooth, Mode=TwoWay}" Visibility="{Binding LeerEnBackground, Converter={StaticResource VisibilityConverter}}"/>
         </StackPanel>
     </StackPanel>
 </Page>

@@ -223,7 +223,7 @@ namespace ReadMyNotifications
                 if (ViewModel.LeerEnBackground == false)
                     return;
 
-                if (DeviceTypeHelper.GetDeviceFormFactorType() == DeviceFormFactorType.Phone)
+                if (ViewModel.IsPhone)
                 {
                     var current = AudioRoutingManager.GetDefault().GetAudioEndpoint();
                     switch (current)

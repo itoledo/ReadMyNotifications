@@ -103,6 +103,18 @@
           <source>Select to read your notifications</source>
           <target state="translated">Selecciona para leer tus notificaciones</target>
         </trans-unit>
+        <trans-unit id="ToggleBluetooth.Header" translate="yes" xml:space="preserve">
+          <source>...when bluetooth is connected</source>
+          <target state="translated">...cuando estés conectado a bluetooth</target>
+        </trans-unit>
+        <trans-unit id="ToggleHeadPhones.Header" translate="yes" xml:space="preserve">
+          <source>...when headphones are connected</source>
+          <target state="translated">...cuando estés usando audífonos</target>
+        </trans-unit>
+        <trans-unit id="ToggleSpeaker.Header" translate="yes" xml:space="preserve">
+          <source>...when speakers are connected</source>
+          <target state="translated">...cuando estés usando el altavoz</target>
+        </trans-unit>
       </group>
     </body>
   </file>

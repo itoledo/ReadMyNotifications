@@ -42,8 +42,11 @@ namespace ReadMyNotifications.ViewModels
         private ResourceLoader _l;
         public ObservableCollection<Notificacion> ListaNotificaciones { get; private set; }
         public ObservableCollection<VoiceInformation> AllVoices { get; private set; }
+        private MediaPlayer _mediaPlayer;
+        private MediaPlaybackList _mediaPlaybackList;
+        private bool _initialized = false;
 
-        public bool IsPhone
+        public static bool IsPhone
         {
             get { return DeviceTypeHelper.GetDeviceFormFactorType() == DeviceFormFactorType.Phone; }
         }
@@ -114,8 +117,8 @@ namespace ReadMyNotifications.ViewModels
             // busquémoslo en la lista de voces.
             var voz =
             (from VoiceInformation voice in AllVoices
-                where voice.Id.Equals(SpeechSynthesizer.DefaultVoice.Id)
-                select voice).FirstOrDefault();
+             where voice.Id.Equals(SpeechSynthesizer.DefaultVoice.Id)
+             select voice).FirstOrDefault();
             if (voz == null)
                 _defaultVoice = SpeechSynthesizer.DefaultVoice;
             else
@@ -212,7 +215,7 @@ namespace ReadMyNotifications.ViewModels
 
             if (settings.Values.ContainsKey("DeteccionAutomatica"))
             {
-                _deteccionAutomatica = (bool) settings.Values["DeteccionAutomatica"];
+                _deteccionAutomatica = (bool)settings.Values["DeteccionAutomatica"];
                 Debug.WriteLine($"ReadSetting: DeteccionAutomatica: {DeteccionAutomatica}");
             }
             else
@@ -262,10 +265,6 @@ namespace ReadMyNotifications.ViewModels
                 settings.Values["DefaultVoiceId"] = DefaultVoice.Id;
         }
         #endregion
-
-        private MediaPlayer _mediaPlayer;
-        private MediaPlaybackList _mediaPlaybackList;
-        private bool _initialized = false;
 
         public async Task Init()
         {
@@ -670,7 +669,7 @@ namespace ReadMyNotifications.ViewModels
                     {
                         _db.BeginTransaction();
                         foreach (var n in lista)
-                            _db.InsertOrReplace(new NotifId() {Id = n.Id});
+                            _db.InsertOrReplace(new NotifId() { Id = n.Id });
                         _db.Commit();
                     }
                     catch (Exception e)
@@ -745,7 +744,8 @@ namespace ReadMyNotifications.ViewModels
 
         public bool CanPlay
         {
-            get { return !_playing; } set { _playing = !value; RaisePropertyChanged(() => CanPlay); }
+            get { return !_playing; }
+            set { _playing = !value; RaisePropertyChanged(() => CanPlay); }
         }
 
         public void StopMediaPlayer()
@@ -778,14 +778,25 @@ namespace ReadMyNotifications.ViewModels
             if (_mediaPlayer == null)
             {
                 _mediaPlayer = new MediaPlayer();
-                _mediaPlayer.AudioCategory = MediaPlayerAudioCategory.Communications;
+                _mediaPlayer.AudioCategory = MediaPlayerAudioCategory.Speech;
                 _mediaPlaybackList = new MediaPlaybackList();
                 _mediaPlayer.Source = _mediaPlaybackList;
                 //_mediaPlayer.MediaEnded -= MediaPlayerOnMediaEnded;
                 _mediaPlayer.MediaEnded += MediaPlayerOnMediaEnded;
                 _mediaPlayer.MediaFailed +=
                     (sender, args) => Debug.WriteLine($"media failed: {args.Error} - {args.ErrorMessage}");
+                _mediaPlayer.CommandManager.IsEnabled = false;
 
+                // configurar STMC
+                var smtc = _mediaPlayer.SystemMediaTransportControls;
+                smtc.ButtonPressed += SMTC_ButtonPressed;
+                smtc.PropertyChanged += SMTC_PropertyChanged;
+                smtc.IsEnabled = true;
+                smtc.IsStopEnabled = true;
+                smtc.IsPauseEnabled = true;
+                smtc.IsPlayEnabled = true;
+                smtc.IsNextEnabled = true;
+                smtc.IsPreviousEnabled = true;
             }
         }
 
@@ -841,15 +852,15 @@ namespace ReadMyNotifications.ViewModels
             //    CoreDispatcherPriority.Normal,
             //    async () =>
             //    {
-                    Debug.WriteLine("Generando Speech");
+            Debug.WriteLine("Generando Speech");
             // The object for controlling the speech synthesis engine (voice).
-                    SpeechSynthesisStream stream;
-                    using (var synth = new Windows.Media.SpeechSynthesis.SpeechSynthesizer())
-                    {
-                        synth.Voice = v;
-                        stream = await synth.SynthesizeTextToStreamAsync(texto);
-                    }
-                    Debug.WriteLine("Generando Speech: post await");
+            SpeechSynthesisStream stream;
+            using (var synth = new Windows.Media.SpeechSynthesis.SpeechSynthesizer())
+            {
+                synth.Voice = v;
+                stream = await synth.SynthesizeTextToStreamAsync(texto);
+            }
+            Debug.WriteLine("Generando Speech: post await");
             if (Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow != null
                 && Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.HasThreadAccess == true)
             {
@@ -940,47 +951,11 @@ namespace ReadMyNotifications.ViewModels
 #endif
 
 #if MEDIAPLAYER
-                //                var player = new MediaPlayer();
                 var player = _mediaPlayer;
-                var smtc = player.SystemMediaTransportControls;
-//                var player = BackgroundMediaPlayer.Current;
-//                var smtc = BackgroundMediaPlayer.Current.SystemMediaTransportControls;
-                //var smtc = SystemMediaTransportControls.GetForCurrentView();
-//                smtc.ButtonPressed += SMTC_ButtonPressed;
-                //smtc.PropertyChanged += SMTC_PropertyChanged;
-                //smtc.IsEnabled = true;
-                //smtc.IsStopEnabled = true;
-                //smtc.IsPauseEnabled = true;
-                //smtc.IsPlayEnabled = true;
-                //smtc.IsNextEnabled = true;
-                //smtc.IsPreviousEnabled = true;
 
                 Debug.WriteLine("SoundLevel: " + smtc.SoundLevel);
-                //BackgroundMediaPlayer.Current.CurrentStateChanged += (sender, pars) =>
-                //{
-                //    Debug.WriteLine($"BMP: CurrentStateChanged: {BackgroundMediaPlayer.Current.CurrentState}");
-                //};
-                //BackgroundMediaPlayer.MessageReceivedFromForeground += (sender, pars) =>
-                //{
-                //    Debug.WriteLine($"BMP: received: {pars}");
-                //};
-                //player.PlaybackSession.PlaybackStateChanged +=
-                //    (sender, args) => Debug.WriteLine($"Background Player: state: {player.PlaybackSession.PlaybackState}");
-                //player.MediaFailed +=
-                //    (sender, args) => Debug.WriteLine($"media failed: {args.Error} - {args.ErrorMessage}");
-                //var player = BackgroundMediaPlayer.Current;
-                //player.AudioCategory = MediaPlayerAudioCategory.Speech;
-                //player.IsMutedChanged += (sender, args) => Debug.WriteLine($"IsMutedChanged: {player.IsMuted}");
-                //Debug.WriteLine($"player.IsMuted: {player.IsMuted}");
-                //player.IsMuted = false;
-                //var uri = new Uri("ms-appdata:///local/" + file.Name);
-                //                var src = MediaSource.CreateFromStorageFile(file);
-                 //var src = MediaSource.CreateFromUri(new Uri("ms-appx:///Assets/Alarm01.wav"));
-                //var src = MediaSource.CreateFromUri(uri);
                 stream.Seek(0);
                 var src = MediaSource.CreateFromStream(stream, stream.ContentType);
-                //player.SetUriSource(uri);
-                //player.Source = src;
 
                 var mediaPlaybackItem = new MediaPlaybackItem(src);
                 _mediaPlaybackList.Items.Add(mediaPlaybackItem);
@@ -996,25 +971,47 @@ namespace ReadMyNotifications.ViewModels
 #endif
 
                 // esto no funciona en mobile
-                if (launchedFromToast == true || (DeviceTypeHelper.GetDeviceFormFactorType() != DeviceFormFactorType.Phone && smtc.SoundLevel != SoundLevel.Muted))
+                if (launchedFromToast == true || (!IsPhone && smtc.SoundLevel != SoundLevel.Muted))
                     player.Play();
                 else
-                {
                     SendToast();
-                }
-                //BackgroundMediaPlayer.Current.Source = mediaPlaybackItem;
-                //BackgroundMediaPlayer.Current.Play();
 #endif
             }
-                //});
-                Debug.WriteLine("fin reproducir: " + texto);
+            //});
+            Debug.WriteLine("fin reproducir: " + texto);
         }
+
+        private bool _pausedDueToMute = false;
 
         private void SMTC_PropertyChanged(SystemMediaTransportControls sender, SystemMediaTransportControlsPropertyChangedEventArgs args)
         {
             Debug.WriteLine($"SMTC: PropertyChanged: {args.Property}");
+
             if (args.Property == SystemMediaTransportControlsProperty.SoundLevel)
+            {
                 Debug.WriteLine($"sound level: {sender.SoundLevel}");
+                switch (sender.SoundLevel)
+                {
+                    case SoundLevel.Full:
+                    case SoundLevel.Low:
+                    if (_pausedDueToMute == true)
+                    {
+                        if (_mediaPlayer != null)
+                            _mediaPlayer.Play();
+                        _pausedDueToMute = false;
+                    }
+                    break;
+
+                    case SoundLevel.Muted:
+                    if (_mediaPlayer != null &&
+                        _mediaPlayer.PlaybackSession.PlaybackState == MediaPlaybackState.Playing)
+                    {
+                        _mediaPlayer.Pause();
+                        _pausedDueToMute = true;
+                    }
+                    break;
+                }
+            }
         }
 
         public void SendToast()
@@ -1024,54 +1021,34 @@ namespace ReadMyNotifications.ViewModels
             {
                 BindingGeneric = new ToastBindingGeneric()
                 {
-                    Children =
-                            {
-                                new AdaptiveText()
-                                {
-                                    Text = _l.GetString("AppNotRunning") // "Read My Notifications is not running")
-                                },
-
-                                new AdaptiveText()
-                                {
-                                    Text = _l.GetString("SelectToRead") // "Select to read your notifications")
-                                },
-
-                                //new AdaptiveImage()
-                                //{
-                                //    Source = image
-                                //}
-                            },
+                    Children = {
+                        new AdaptiveText()
+                        {
+                            Text = _l.GetString("AppNotRunning") // "Read My Notifications is not running")
+                        },
+                        new AdaptiveText()
+                        {
+                            Text = _l.GetString("SelectToRead") // "Select to read your notifications")
+                        },
+                    },
                     AppLogoOverride = new ToastGenericAppLogo()
                     {
                         Source = "ms-appx:///Assets/StoreLogo.png"
                     }
-                    //AppLogoOverride = new ToastGenericAppLogo()
-                    //{
-                    //    Source = logo,
-                    //    HintCrop = ToastGenericAppLogoCrop.Circle
-                    //}
                 }
             };
-            //var ta = new ToastAudio();
-            //ta.Loop = false;
-            //ta.Silent = false;
-            //ta.Src = fileUri;
             ToastContent toastContent = new ToastContent()
             {
                 Visual = visual,
                 ActivationType = ToastActivationType.Foreground,
-                //Actions = actions,
 
                 // Arguments when the user taps body of toast
                 Launch = new QueryString()
-                        {
-                            { "action", "ToastRead" },
-                            //{ "conversationId", conversationId.ToString() }
-
-                        }.ToString(),
+                {
+                    { "action", "ToastRead" },
+                }.ToString(),
 
                 Scenario = ToastScenario.Default,
-                //Audio = ta
             };
             var toast = new ToastNotification(toastContent.GetXml());
             toast.SuppressPopup = false;
@@ -1079,7 +1056,6 @@ namespace ReadMyNotifications.ViewModels
             toast.Tag = "BR";
             ToastNotificationManager.History.RemoveGroup("RMN");
             ToastNotificationManager.CreateToastNotifier().Show(toast);
-            //await Task.Delay(10000);
         }
 
         private void SMTC_ButtonPressed(SystemMediaTransportControls sender, SystemMediaTransportControlsButtonPressedEventArgs args)
