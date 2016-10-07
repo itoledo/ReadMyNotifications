@@ -6,11 +6,13 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Background;
 using Windows.ApplicationModel.Resources;
 using Windows.Devices.Enumeration;
 using Windows.Foundation;
+using Windows.Foundation.Collections;
 using Windows.Media.Audio;
 using Windows.Media.Core;
 using Windows.Media.Devices;
@@ -46,6 +48,9 @@ namespace ReadMyNotifications.ViewModels
         private MediaPlaybackList _mediaPlaybackList;
         private SystemMediaTransportControls _smtc;
         private bool _initialized = false;
+        Windows.Storage.ApplicationDataContainer settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+        SQLiteConnection _db;
+
 
         public static bool IsPhone
         {
@@ -64,9 +69,6 @@ namespace ReadMyNotifications.ViewModels
                 RaisePropertyChanged(() => DefaultVoice);
             }
         }
-
-        Windows.Storage.ApplicationDataContainer settings = Windows.Storage.ApplicationData.Current.LocalSettings;
-        SQLiteConnection _db;
 
         public class NotifId
         {
@@ -118,8 +120,8 @@ namespace ReadMyNotifications.ViewModels
             // busquémoslo en la lista de voces.
             var voz =
             (from VoiceInformation voice in AllVoices
-             where voice.Id.Equals(SpeechSynthesizer.DefaultVoice.Id)
-             select voice).FirstOrDefault();
+                where voice.Id.Equals(SpeechSynthesizer.DefaultVoice.Id)
+                select voice).FirstOrDefault();
             if (voz == null)
                 _defaultVoice = SpeechSynthesizer.DefaultVoice;
             else
@@ -127,6 +129,7 @@ namespace ReadMyNotifications.ViewModels
         }
 
         #region SETTINGS
+
         private bool _deteccionAutomatica;
 
         public bool DeteccionAutomatica
@@ -216,7 +219,7 @@ namespace ReadMyNotifications.ViewModels
 
             if (settings.Values.ContainsKey("DeteccionAutomatica"))
             {
-                _deteccionAutomatica = (bool)settings.Values["DeteccionAutomatica"];
+                _deteccionAutomatica = (bool) settings.Values["DeteccionAutomatica"];
                 Debug.WriteLine($"ReadSetting: DeteccionAutomatica: {DeteccionAutomatica}");
             }
             else
@@ -224,7 +227,7 @@ namespace ReadMyNotifications.ViewModels
 
             if (settings.Values.ContainsKey("LeerEnBackground"))
             {
-                _leerEnBackground = (bool)settings.Values["LeerEnBackground"];
+                _leerEnBackground = (bool) settings.Values["LeerEnBackground"];
                 Debug.WriteLine($"ReadSetting: LeerEnBackground: {LeerEnBackground}");
             }
             else
@@ -232,7 +235,7 @@ namespace ReadMyNotifications.ViewModels
 
             if (settings.Values.ContainsKey("LeerSpeaker"))
             {
-                _leerSpeaker = (bool)settings.Values["LeerSpeaker"];
+                _leerSpeaker = (bool) settings.Values["LeerSpeaker"];
                 Debug.WriteLine($"ReadSetting: LeerSpeaker: {LeerSpeaker}");
             }
             else
@@ -240,7 +243,7 @@ namespace ReadMyNotifications.ViewModels
 
             if (settings.Values.ContainsKey("LeerHeadphones"))
             {
-                _leerHeadphones = (bool)settings.Values["LeerHeadphones"];
+                _leerHeadphones = (bool) settings.Values["LeerHeadphones"];
                 Debug.WriteLine($"ReadSetting: LeerHeadphones: {LeerHeadphones}");
             }
             else
@@ -248,7 +251,7 @@ namespace ReadMyNotifications.ViewModels
 
             if (settings.Values.ContainsKey("LeerBluetooth"))
             {
-                _leerBluetooth = (bool)settings.Values["LeerBluetooth"];
+                _leerBluetooth = (bool) settings.Values["LeerBluetooth"];
                 Debug.WriteLine($"ReadSetting: LeerBluetooth: {LeerBluetooth}");
             }
             else
@@ -265,6 +268,7 @@ namespace ReadMyNotifications.ViewModels
             if (DefaultVoice != null)
                 settings.Values["DefaultVoiceId"] = DefaultVoice.Id;
         }
+
         #endregion
 
         public async Task Init()
@@ -511,201 +515,82 @@ namespace ReadMyNotifications.ViewModels
             return lista;
         }
 
-        private bool _checking = false;
+        private Mutex _mutex = new Mutex();
 
-        public async Task CheckNewNotifications(bool launchedFromToast)
+        // notificaciones que se van a mostrar en pantalla
+        public async Task FillNotifications()
         {
-            if (_checking == true)
-            {
-                Debug.WriteLine("skipping");
-                return;
-            }
-
-            _checking = true;
-
             try
             {
-                var lista = await GetNotifications(true);
+                Debug.WriteLine("FillNotifications: wait");
+                _mutex.WaitOne();
+                Debug.WriteLine("FillNotifications: start");
+                Getting = true;
 
-                // a leer y commitear todas juntas
                 try
                 {
-                    foreach (var n in lista)
-                        await ReadNotification(n, launchedFromToast);
-
-                    // solo las nuevas
-                    _db.BeginTransaction();
-                    foreach (var n in lista)
-                        _db.InsertOrReplace(new NotifId() { Id = n.Id });
-                    _db.Commit();
+                    var lista = await GetNotifications(true);
+                    if (lista == null)
+                    {
+                        await new MessageDialog(_l.GetString("ErrorGet")).ShowAsync();
+                        return;
+                    }
+                    lock (ListaNotificaciones)
+                    {
+                        ListaNotificaciones.Clear();
+                        foreach (var n in lista.OrderByDescending(x => x.CreationTime))
+                            ListaNotificaciones.Add(n);
+                    }
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine($"excepcion en db: {e}");
-                    try
-                    {
-                        _db.Rollback();
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"excepcion en rollback: {ex}");
-                    }
+                    // ???
+                    Debug.WriteLine($"excepción general: {e}");
                 }
-
-                lock (ListaNotificaciones)
+                finally
                 {
-                    var listafull = new List<Notificacion>();
-                    foreach (var n in ListaNotificaciones)
-                        listafull.Add(n);
-                    foreach (var n in lista)
-                        listafull.Add(n);
-                    var olista = listafull.OrderByDescending(f => f.CreationTime);
-                    ListaNotificaciones.Clear();
-                    foreach (var n in olista)
-                        ListaNotificaciones.Add(n);
+                    Getting = false;
                 }
-            }
-            catch (Exception e)
-            {
-                // ???
-                Debug.WriteLine($"excepción general: {e}");
             }
             finally
             {
-                _checking = false;
+                _mutex.ReleaseMutex();
             }
-            Debug.WriteLine("fin");
+            Debug.WriteLine("FillNotifications: end");
         }
 
-        public async Task GetNotifications()
+        public async Task ReadAllNotifications()
         {
-            if (_getting == true)
+            Debug.WriteLine("ReadAllNotifications: begin");
+            var notifs = await GetNotifications(true);
+            foreach (var n in notifs)
             {
-                Debug.WriteLine("skipping");
-                return;
+                await ReadNotification(n);
             }
+            GuardarNotificaciones(notifs);
+            Debug.WriteLine("ReadAllNotifications: end");
+        }
 
-            Getting = true;
-
+        public void GuardarNotificaciones(List<Notificacion> lista)
+        {
             try
             {
-                IReadOnlyList<UserNotification> notifs;
-                // Get the toast notifications
-                try
-                {
-                    _listener = UserNotificationListener.Current;
-                    notifs = await _listener.GetNotificationsAsync(NotificationKinds.Toast);
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine($"excepcion: {e}");
-                    notifs = null;
-                }
-
-                if (notifs == null)
-                {
-                    await new MessageDialog(_l.GetString("ErrorGet")).ShowAsync();
-                    return;
-                }
-
-                var lista = new List<Notificacion>();
-
-                foreach (var notif in notifs)
-                {
-                    var n = new Notificacion();
-                    try
-                    {
-                        n.Id = notif.Id;
-                        n.CreationTime = notif.CreationTime;
-
-                        // Get the app's display name
-                        string appDisplayName = notif.AppInfo.DisplayInfo.DisplayName;
-                        n.AppName = appDisplayName;
-
-                        // Get the app's logo
-                        try
-                        {
-                            BitmapImage appLogo = new BitmapImage();
-                            RandomAccessStreamReference appLogoStream =
-                                notif.AppInfo.DisplayInfo.GetLogo(new Size(64, 64));
-                            await appLogo.SetSourceAsync(await appLogoStream.OpenReadAsync());
-                            n.Logo = appLogo;
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.WriteLine($"excepcion: app logo: {e}");
-                        }
-
-                        try
-                        {
-                            // Get the toast binding, if present
-                            NotificationBinding toastBinding =
-                                notif.Notification.Visual.GetBinding(KnownNotificationBindings.ToastGeneric);
-
-                            if (toastBinding != null)
-                            {
-                                // And then get the text elements from the toast binding
-                                IReadOnlyList<AdaptiveNotificationText> textElements = toastBinding.GetTextElements();
-
-                                // Treat the first text element as the title text
-                                string titleText = textElements.FirstOrDefault()?.Text;
-                                n.Title = titleText;
-
-                                // We'll treat all subsequent text elements as body text,
-                                // joining them together via newlines.
-                                string bodyText = string.Join("\n", textElements.Skip(1).Select(t => t.Text));
-                                n.Text = bodyText;
-
-                                // sólo si tiene algún texto
-                                if (!string.IsNullOrEmpty(bodyText) || !string.IsNullOrEmpty(titleText))
-                                    lista.Add(n);
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.WriteLine($"excepcion: leer notif: {e}");
-                        }
-
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine($"excepcion: base: {e}");
-                    }
-                }
-                lock (ListaNotificaciones)
-                {
-                    ListaNotificaciones.Clear();
-                    foreach (var n in lista.OrderByDescending(x => x.CreationTime))
-                        ListaNotificaciones.Add(n);
-                    try
-                    {
-                        _db.BeginTransaction();
-                        foreach (var n in lista)
-                            _db.InsertOrReplace(new NotifId() { Id = n.Id });
-                        _db.Commit();
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine($"excepcion en db: {e}");
-                        try
-                        {
-                            _db.Rollback();
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"excepcion en rollback: {ex}");
-                        }
-                    }
-                }
+                _db.BeginTransaction();
+                foreach (var n in lista)
+                    _db.InsertOrReplace(new NotifId() { Id = n.Id });
+                _db.Commit();
             }
             catch (Exception e)
             {
-                // ???
-                Debug.WriteLine($"excepción general: {e}");
-            }
-            finally
-            {
-                Getting = false;
+                Debug.WriteLine($"excepcion en db: {e}");
+                try
+                {
+                    _db.Rollback();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"excepcion en rollback: {ex}");
+                }
             }
         }
 
@@ -721,38 +606,29 @@ namespace ReadMyNotifications.ViewModels
             return existe != null;
         }
 
-        public async Task ReadNotifications(ReadType read)
+        public async Task ReadNotifications(ReadType read, List<Notificacion> notifs)
         {
             int cnt = 0;
-            foreach (var n in ListaNotificaciones)
+            foreach (var n in notifs)
             {
                 if (read == ReadType.ReadAll || !IsNotificationInDb(n.Id))
                     await ReadNotification(n);
 
                 cnt++;
             }
-            if (cnt == 0)
-                await Speak(_l.GetString("NoNotifications"));
-            else
-                await Speak(_l.GetString("ReadEnd"));
+            //if (cnt == 0)
+            //    await Speak(_l.GetString("NoNotifications"));
+            //else
+            //    await Speak(_l.GetString("ReadEnd"));
         }
 
-        public async Task ReadNotification(Notificacion n, bool launchedFromToast = false)
+        public async Task ReadNotification(Notificacion n)
         {
-            // _l.GetString("From") + " " + 
-            await Speak(n.AppName, launchedFromToast);
-            await Speak($"{n.Title}. {n.Text}", launchedFromToast);
+            var stream = await GenerarSpeech($"{n.AppName}: {n.Title}. {n.Text}");
+            AddTrack(n, stream);
         }
 
         private bool _playing = false;
-
-        public async Task Speak(string texto, bool launchedFromToast = false)
-        {
-            Debug.WriteLine("Speak: " + texto);
-            // The media object for controlling and playing audio.
-
-            await Reproducir(texto, launchedFromToast);
-        }
 
         public bool CanPlay
         {
@@ -771,10 +647,10 @@ namespace ReadMyNotifications.ViewModels
                 return;
             }
 
-            if (_mediaPlaybackList != null && _mediaPlaybackList.Items != null)
-                _mediaPlaybackList.Items.Clear();
             if (_mediaPlayer != null)
                 _mediaPlayer.Pause();
+            if (_mediaPlaybackList != null && _mediaPlaybackList.Items != null)
+                _mediaPlaybackList.Items.Clear();
             if (Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow != null
             && Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.HasThreadAccess == true)
                 Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
@@ -798,6 +674,7 @@ namespace ReadMyNotifications.ViewModels
                 _mediaPlayer.MediaFailed +=
                     (sender, args) => Debug.WriteLine($"media failed: {args.Error} - {args.ErrorMessage}");
                 _mediaPlayer.CommandManager.IsEnabled = false;
+                _mediaPlayer.AutoPlay = true;
 
                 // configurar STMC
                 _smtc = _mediaPlayer.SystemMediaTransportControls;
@@ -814,8 +691,10 @@ namespace ReadMyNotifications.ViewModels
 
         private void AddTrack(Notificacion n, SpeechSynthesisStream stream)
         {
+            Debug.WriteLine($"Añadiendo track para notificación {n.Id} - {n.AppName} - {n.Title}");
             var src = MediaSource.CreateFromStream(stream, stream.ContentType);
             var mediaPlaybackItem = new MediaPlaybackItem(src);
+            src.CustomProperties.Add("Id", n.Id);
             var props = mediaPlaybackItem.GetDisplayProperties();
             props.MusicProperties.Title = n.AppName + " " + n.Title;
             props.MusicProperties.Artist = _l.GetString("AppTitle");
@@ -827,12 +706,9 @@ namespace ReadMyNotifications.ViewModels
             return _mediaPlayer.SystemMediaTransportControls.SoundLevel == SoundLevel.Muted;
         }
 
-        public async Task Reproducir(string texto, bool launchedFromToast = false)
+        public async Task<SpeechSynthesisStream> GenerarSpeech(string texto)
         {
             Debug.WriteLine("Reproducir: " + texto);
-
-            InitMediaPlayer();
-            CanPlay = false;
 
             VoiceInformation v = null;
 
@@ -862,18 +738,6 @@ namespace ReadMyNotifications.ViewModels
                 v = DefaultVoice;
             }
 
-            // Generate the audio stream from plain text.
-            //Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
-            //    CoreDispatcherPriority.Normal,
-            //    async () =>
-            //    {
-            //Debug.WriteLine("Generando Speech: await");
-            //var view = Windows.ApplicationModel.Core.CoreApplication.MainView;
-            //await view.Dispatcher.RunAsync(
-            ////await view.CoreWindow.Dispatcher.RunAsync(
-            //    CoreDispatcherPriority.Normal,
-            //    async () =>
-            //    {
             Debug.WriteLine("Generando Speech");
             // The object for controlling the speech synthesis engine (voice).
             SpeechSynthesisStream stream;
@@ -882,124 +746,10 @@ namespace ReadMyNotifications.ViewModels
                 synth.Voice = v;
                 stream = await synth.SynthesizeTextToStreamAsync(texto);
             }
-            Debug.WriteLine("Generando Speech: post await");
-            if (Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow != null
-                && Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.HasThreadAccess == true)
-            {
-                // Send the stream to the media object.
-                stream.Seek(0);
-                var mediaSource = MediaSource.CreateFromStream(stream, stream.ContentType);
-                var mediaPlaybackItem = new MediaPlaybackItem(mediaSource);
 
-                _mediaPlaybackList.Items.Add(mediaPlaybackItem);
-                _mediaPlayer.Play();
-            }
-            else
-            {
-                Debug.WriteLine("background mode");
-#if SPEECH_WRITE_FILE
-                //                var folder = ApplicationData.Current.TemporaryFolder;
-                //                var folder = KnownFolders.MusicLibrary;
-                var folder = Windows.ApplicationModel.Package.Current.InstalledLocation;
-                folder = await folder.GetFolderAsync("Assets");
-                var file = await folder.CreateFileAsync("speech.wav", CreationCollisionOption.ReplaceExisting);
-                using (var targetStream = await file.OpenAsync(FileAccessMode.ReadWrite))
-                using (var reader = new DataReader(stream.GetInputStreamAt(0)))
-                {
-                    var os = targetStream.GetOutputStreamAt(0);
-                    await reader.LoadAsync((uint)stream.Size);
-                    while (reader.UnconsumedBufferLength > 0)
-                    {
-                        uint dataToRead = reader.UnconsumedBufferLength > 64
-                                        ? 64
-                                        : reader.UnconsumedBufferLength;
-
-                        IBuffer buffer = reader.ReadBuffer(dataToRead);
-
-                        await os.WriteAsync(buffer);
-                    }
-                    await os.FlushAsync();
-                }
-//                var fileUri = new Uri("ms-appdata:///local/" + file.Name);
-//                var fileUri = new Uri("ms-appx:///Assets/Alarm01.wav");
-                var fileUri = new Uri("ms-appx:///Assets/" + Uri.EscapeDataString(file.Name));
-#endif
-#if AUDIOGRAPH
-                AudioGraph graph;
-        AudioFileInputNode fileInput;
-        AudioDeviceOutputNode deviceOutput;
-
-
-        AudioGraphSettings settings = new AudioGraphSettings(AudioRenderCategory.Media);
-                CreateAudioGraphResult result = await AudioGraph.CreateAsync(settings);
-                if (result.Status != AudioGraphCreationStatus.Success)
-                {
-                    Debug.WriteLine($"audiograph failed");
-                    return;
-                }
-                graph = result.Graph;
-
-                // Create a device output node
-                CreateAudioDeviceOutputNodeResult deviceOutputNodeResult = await graph.CreateDeviceOutputNodeAsync();
-
-                if (deviceOutputNodeResult.Status != AudioDeviceNodeCreationStatus.Success)
-                {
-                    // Cannot create device output node
-                    Debug.WriteLine($"audiograph failed: deviceoutput");
-                    return;
-                }
-
-                deviceOutput = deviceOutputNodeResult.DeviceOutputNode;
-
-                var nfile = await folder.GetFileAsync(file.Name);
-                Debug.WriteLine($"file: {nfile.Name} - {nfile.IsAvailable}");
-
-                CreateAudioFileInputNodeResult fileInputResult = await graph.CreateFileInputNodeAsync(nfile);
-                if (AudioFileNodeCreationStatus.Success != fileInputResult.Status)
-                {
-                    Debug.WriteLine($"audiograph failed: fileinput: {fileInputResult.Status}");
-                    return;
-                }
-                fileInput = fileInputResult.FileInputNode;
-                fileInput.AddOutgoingConnection(deviceOutput);
-                fileInput.StartTime = TimeSpan.FromSeconds(0);
-
-                graph.UnrecoverableErrorOccurred +=
-                    (sender, args) => Debug.WriteLine("audiograph: unrec error: " + args);
-
-                graph.Start();
-
-                await Task.Delay(30000);
-#endif
-
-#if MEDIAPLAYER
-                var player = _mediaPlayer;
-                Debug.WriteLine("SoundLevel: " + _smtc.SoundLevel);
-                stream.Seek(0);
-                var src = MediaSource.CreateFromStream(stream, stream.ContentType);
-
-                var mediaPlaybackItem = new MediaPlaybackItem(src);
-                _mediaPlaybackList.Items.Add(mediaPlaybackItem);
-
-#if DEVICES
-                string audioSelector = MediaDevice.GetAudioRenderSelector();
-                var outputDevices = await DeviceInformation.FindAllAsync(audioSelector);
-                foreach (var device in outputDevices)
-                {
-                    Debug.WriteLine($"dev: {device.Id} - {device.Name}");
-                }
-                player.AudioDevice = outputDevices[2];
-#endif
-
-                // esto no funciona en mobile
-                if (launchedFromToast == true || (!IsPhone && _smtc.SoundLevel != SoundLevel.Muted))
-                    player.Play();
-                else
-                    SendToast();
-#endif
-            }
-            //});
             Debug.WriteLine("fin reproducir: " + texto);
+
+            return stream;
         }
 
         private bool _pausedDueToMute = false;
@@ -1082,6 +832,41 @@ namespace ReadMyNotifications.ViewModels
         private void SMTC_ButtonPressed(SystemMediaTransportControls sender, SystemMediaTransportControlsButtonPressedEventArgs args)
         {
             Debug.WriteLine("SMTC: button pressed");
+            switch (args.Button)
+            {
+                case SystemMediaTransportControlsButton.Play:
+                    _mediaPlayer.Play();
+                    break;
+                case SystemMediaTransportControlsButton.Pause:
+                    _mediaPlayer.Pause();
+                    break;
+                case SystemMediaTransportControlsButton.Stop:
+                    _mediaPlayer.Pause();
+                    _mediaPlayer.PlaybackSession.Position = TimeSpan.Zero;
+                    break;
+                case SystemMediaTransportControlsButton.Next:
+                    SaltaTrack(1);
+                    break;
+                case SystemMediaTransportControlsButton.Previous:
+                    SaltaTrack(-1);
+                    break;
+            }
+        }
+
+        private void SaltaTrack(int idx)
+        {
+            Debug.WriteLine($"SaltaTrack: {idx}");
+            var cnt = _mediaPlaybackList.Items.Count();
+            var pos = cnt + idx;
+            if (pos >= cnt - 1)
+                _smtc.IsNextEnabled = false;
+            else
+                _smtc.IsNextEnabled = true;
+            if (pos <= 0)
+                _smtc.IsPreviousEnabled = false;
+            else
+                _smtc.IsPreviousEnabled = true;
+            _mediaPlaybackList.MoveTo((uint) pos);
         }
 
         private void MediaPlayerOnMediaEnded(MediaPlayer sender, object args)

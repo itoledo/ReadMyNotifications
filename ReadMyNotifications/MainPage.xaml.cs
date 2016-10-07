@@ -45,7 +45,7 @@ namespace ReadMyNotifications
 
             this.Loaded += async (sender, args) =>
             {
-                await App.ViewModel.GetNotifications();
+                await App.ViewModel.FillNotifications();
             };
 
             var titleBar = ApplicationView.GetForCurrentView().TitleBar;
@@ -60,8 +60,8 @@ namespace ReadMyNotifications
             base.OnNavigatedTo(e);
             if (e.Parameter != null && e.Parameter.Equals("read"))
             {
-                await App.ViewModel.GetNotifications();
-                await App.ViewModel.ReadNotifications(MainViewModel.ReadType.ReadNew);
+                await App.ViewModel.FillNotifications();
+                //await App.ViewModel.ReadNotifications(MainViewModel.ReadType.ReadNew);
             }
         }
 

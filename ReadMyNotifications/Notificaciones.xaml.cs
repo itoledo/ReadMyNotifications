@@ -64,7 +64,8 @@ namespace ReadMyNotifications
 
         private async void Read_OnClick(object sender, RoutedEventArgs e)
         {
-            await App.ViewModel.ReadNotifications(MainViewModel.ReadType.ReadAll);
+            //await App.ViewModel.ReadNotifications(MainViewModel.ReadType.ReadAll);
+            await App.ViewModel.ReadAllNotifications();
         }
 
         private void Stop_OnClick(object sender, RoutedEventArgs e)
@@ -75,7 +76,7 @@ namespace ReadMyNotifications
         private async void Reload_OnClick(object sender, RoutedEventArgs e)
         {
             App.ViewModel.StopMediaPlayer();
-            await App.ViewModel.GetNotifications();
+            await App.ViewModel.FillNotifications();
         }
     }
 }
