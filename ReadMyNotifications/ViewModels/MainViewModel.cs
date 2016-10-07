@@ -44,6 +44,7 @@ namespace ReadMyNotifications.ViewModels
         public ObservableCollection<VoiceInformation> AllVoices { get; private set; }
         private MediaPlayer _mediaPlayer;
         private MediaPlaybackList _mediaPlaybackList;
+        private SystemMediaTransportControls _smtc;
         private bool _initialized = false;
 
         public static bool IsPhone
@@ -407,6 +408,109 @@ namespace ReadMyNotifications.ViewModels
             }
         }
 
+        private async Task<List<Notificacion>> GetNotifications(bool all)
+        {
+            Debug.WriteLine("obteniendo notificaciones");
+            IReadOnlyList<UserNotification> newnotifs;
+            // Get the toast notifications
+            try
+            {
+                var listener = UserNotificationListener.Current;
+                newnotifs = await listener.GetNotificationsAsync(NotificationKinds.Toast);
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine($"excepcion: {e}");
+                newnotifs = null;
+            }
+
+            if (newnotifs == null)
+            {
+//                await Speak(_l.GetString("ErrorGet"));
+                return null;
+            }
+
+            var lista = new List<Notificacion>();
+
+            Debug.WriteLine("iterando");
+
+            foreach (var notif in newnotifs)
+            {
+                if (all == false)
+                {
+                    // comparemos con la bd
+                    var existe = _db.Table<NotifId>().FirstOrDefault(z => z.Id == notif.Id);
+                    if (existe != null)
+                        continue;
+                }
+
+                var n = new Notificacion();
+                try
+                {
+                    n.Id = notif.Id;
+                    n.CreationTime = notif.CreationTime;
+
+                    // Get the app's display name
+                    string appDisplayName = notif.AppInfo.DisplayInfo.DisplayName;
+                    n.AppName = appDisplayName;
+
+                    //// Get the app's logo
+                    try
+                    {
+                        BitmapImage appLogo = new BitmapImage();
+                        RandomAccessStreamReference appLogoStream =
+                            notif.AppInfo.DisplayInfo.GetLogo(new Size(64, 64));
+                        await appLogo.SetSourceAsync(await appLogoStream.OpenReadAsync());
+                        n.Logo = appLogo;
+                    }
+                    catch (Exception e)
+                    {
+                        /** esto puede fallar **/
+//                        Debug.WriteLine($"excepcion: app logo: {e}");
+                    }
+
+                    try
+                    {
+                        // Get the toast binding, if present
+                        NotificationBinding toastBinding =
+                            notif.Notification.Visual.GetBinding(KnownNotificationBindings.ToastGeneric);
+
+                        if (toastBinding != null)
+                        {
+                            // And then get the text elements from the toast binding
+                            IReadOnlyList<AdaptiveNotificationText> textElements = toastBinding.GetTextElements();
+
+                            // Treat the first text element as the title text
+                            string titleText = textElements.FirstOrDefault()?.Text;
+                            n.Title = titleText;
+
+                            // We'll treat all subsequent text elements as body text,
+                            // joining them together via newlines.
+                            string bodyText = string.Join("\n", textElements.Skip(1).Select(t => t.Text));
+                            n.Text = bodyText;
+
+                            // sólo si tiene algún texto
+                            if (!string.IsNullOrEmpty(bodyText) || !string.IsNullOrEmpty(titleText))
+                            {
+                                lista.Add(n);
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine($"excepcion: leer notif: {e}");
+                    }
+
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine($"excepcion: base: {e}");
+                }
+            }
+
+            return lista;
+        }
+
         private bool _checking = false;
 
         public async Task CheckNewNotifications(bool launchedFromToast)
@@ -421,99 +525,7 @@ namespace ReadMyNotifications.ViewModels
 
             try
             {
-                Debug.WriteLine("obteniendo notificaciones");
-                IReadOnlyList<UserNotification> newnotifs;
-                // Get the toast notifications
-                try
-                {
-                    var listener = UserNotificationListener.Current;
-                    newnotifs = await _listener.GetNotificationsAsync(NotificationKinds.Toast);
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine($"excepcion: {e}");
-                    newnotifs = null;
-                }
-
-                if (newnotifs == null)
-                {
-                    await Speak(_l.GetString("ErrorGet"));
-                    return;
-                }
-
-                var lista = new List<Notificacion>();
-
-                Debug.WriteLine("iterando");
-
-                foreach (var notif in newnotifs)
-                {
-                    // comparemos con la bd
-                    var existe = _db.Table<NotifId>().FirstOrDefault(z => z.Id == notif.Id);
-                    if (existe != null)
-                        continue;
-
-                    var n = new Notificacion();
-                    try
-                    {
-                        n.Id = notif.Id;
-                        n.CreationTime = notif.CreationTime;
-
-                        // Get the app's display name
-                        string appDisplayName = notif.AppInfo.DisplayInfo.DisplayName;
-                        n.AppName = appDisplayName;
-
-                        //// Get the app's logo
-                        try
-                        {
-                            BitmapImage appLogo = new BitmapImage();
-                            RandomAccessStreamReference appLogoStream =
-                                notif.AppInfo.DisplayInfo.GetLogo(new Size(64, 64));
-                            await appLogo.SetSourceAsync(await appLogoStream.OpenReadAsync());
-                            n.Logo = appLogo;
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.WriteLine($"excepcion: app logo: {e}");
-                        }
-
-                        try
-                        {
-                            // Get the toast binding, if present
-                            NotificationBinding toastBinding =
-                                notif.Notification.Visual.GetBinding(KnownNotificationBindings.ToastGeneric);
-
-                            if (toastBinding != null)
-                            {
-                                // And then get the text elements from the toast binding
-                                IReadOnlyList<AdaptiveNotificationText> textElements = toastBinding.GetTextElements();
-
-                                // Treat the first text element as the title text
-                                string titleText = textElements.FirstOrDefault()?.Text;
-                                n.Title = titleText;
-
-                                // We'll treat all subsequent text elements as body text,
-                                // joining them together via newlines.
-                                string bodyText = string.Join("\n", textElements.Skip(1).Select(t => t.Text));
-                                n.Text = bodyText;
-
-                                // sólo si tiene algún texto
-                                if (!string.IsNullOrEmpty(bodyText) || !string.IsNullOrEmpty(titleText))
-                                {
-                                    lista.Add(n);
-                                }
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.WriteLine($"excepcion: leer notif: {e}");
-                        }
-
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine($"excepcion: base: {e}");
-                    }
-                }
+                var lista = await GetNotifications(true);
 
                 // a leer y commitear todas juntas
                 try
@@ -788,16 +800,26 @@ namespace ReadMyNotifications.ViewModels
                 _mediaPlayer.CommandManager.IsEnabled = false;
 
                 // configurar STMC
-                var smtc = _mediaPlayer.SystemMediaTransportControls;
-                smtc.ButtonPressed += SMTC_ButtonPressed;
-                smtc.PropertyChanged += SMTC_PropertyChanged;
-                smtc.IsEnabled = true;
-                smtc.IsStopEnabled = true;
-                smtc.IsPauseEnabled = true;
-                smtc.IsPlayEnabled = true;
-                smtc.IsNextEnabled = true;
-                smtc.IsPreviousEnabled = true;
+                _smtc = _mediaPlayer.SystemMediaTransportControls;
+                _smtc.ButtonPressed += SMTC_ButtonPressed;
+                _smtc.PropertyChanged += SMTC_PropertyChanged;
+                _smtc.IsEnabled = true;
+                _smtc.IsStopEnabled = true;
+                _smtc.IsPauseEnabled = true;
+                _smtc.IsPlayEnabled = true;
+                _smtc.IsNextEnabled = true;
+                _smtc.IsPreviousEnabled = true;
             }
+        }
+
+        private void AddTrack(Notificacion n, SpeechSynthesisStream stream)
+        {
+            var src = MediaSource.CreateFromStream(stream, stream.ContentType);
+            var mediaPlaybackItem = new MediaPlaybackItem(src);
+            var props = mediaPlaybackItem.GetDisplayProperties();
+            props.MusicProperties.Title = n.AppName + " " + n.Title;
+            props.MusicProperties.Artist = _l.GetString("AppTitle");
+            _mediaPlaybackList.Items.Add(mediaPlaybackItem);
         }
 
         public bool IsSMTCMuted()
@@ -952,8 +974,7 @@ namespace ReadMyNotifications.ViewModels
 
 #if MEDIAPLAYER
                 var player = _mediaPlayer;
-
-                Debug.WriteLine("SoundLevel: " + smtc.SoundLevel);
+                Debug.WriteLine("SoundLevel: " + _smtc.SoundLevel);
                 stream.Seek(0);
                 var src = MediaSource.CreateFromStream(stream, stream.ContentType);
 
@@ -971,7 +992,7 @@ namespace ReadMyNotifications.ViewModels
 #endif
 
                 // esto no funciona en mobile
-                if (launchedFromToast == true || (!IsPhone && smtc.SoundLevel != SoundLevel.Muted))
+                if (launchedFromToast == true || (!IsPhone && _smtc.SoundLevel != SoundLevel.Muted))
                     player.Play();
                 else
                     SendToast();

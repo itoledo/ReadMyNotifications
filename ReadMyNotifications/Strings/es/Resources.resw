@@ -85,4 +85,13 @@
   <data name="SelectToRead" xml:space="preserve">
     <value>Selecciona para leer tus notificaciones</value>
   </data>
+  <data name="ToggleBluetooth.Header" xml:space="preserve">
+    <value>...cuando estés conectado a bluetooth</value>
+  </data>
+  <data name="ToggleHeadPhones.Header" xml:space="preserve">
+    <value>...cuando estés usando audífonos</value>
+  </data>
+  <data name="ToggleSpeaker.Header" xml:space="preserve">
+    <value>...cuando estés usando el altavoz</value>
+  </data>
 </root>
