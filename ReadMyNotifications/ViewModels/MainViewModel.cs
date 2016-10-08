@@ -46,7 +46,9 @@ namespace ReadMyNotifications.ViewModels
         public ObservableCollection<VoiceInformation> AllVoices { get; private set; }
         private MediaPlayer _mediaPlayer;
         private MediaPlaybackList _mediaPlaybackList;
+#if SMTC
         private SystemMediaTransportControls _smtc;
+#endif
         private bool _initialized = false;
         Windows.Storage.ApplicationDataContainer settings = Windows.Storage.ApplicationData.Current.LocalSettings;
         SQLiteConnection _db;
@@ -128,7 +130,7 @@ namespace ReadMyNotifications.ViewModels
                 _defaultVoice = voz;
         }
 
-        #region SETTINGS
+#region SETTINGS
 
         private bool _deteccionAutomatica;
 
@@ -269,7 +271,7 @@ namespace ReadMyNotifications.ViewModels
                 settings.Values["DefaultVoiceId"] = DefaultVoice.Id;
         }
 
-        #endregion
+#endregion
 
         public async Task Init()
         {
@@ -562,6 +564,7 @@ namespace ReadMyNotifications.ViewModels
         public async Task ReadAllNotifications()
         {
             Debug.WriteLine("ReadAllNotifications: begin");
+            StopMediaPlayer();
             var notifs = await GetNotifications(true);
             foreach (var n in notifs)
             {
@@ -639,26 +642,26 @@ namespace ReadMyNotifications.ViewModels
         public void StopMediaPlayer()
         {
             Debug.WriteLine("StopMediaPlayer");
-            if (Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow == null
-                || Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.HasThreadAccess == false)
-            {
-                Debug.WriteLine("modo background, ignorando stop");
-                _playing = false;
-                return;
-            }
+            //if (Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow == null
+            //    || Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.HasThreadAccess == false)
+            //{
+            //    Debug.WriteLine("modo background, ignorando stop");
+            //    _playing = false;
+            //    return;
+            //}
 
             if (_mediaPlayer != null)
                 _mediaPlayer.Pause();
             if (_mediaPlaybackList != null && _mediaPlaybackList.Items != null)
                 _mediaPlaybackList.Items.Clear();
-            if (Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow != null
-            && Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.HasThreadAccess == true)
-                Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
-                CoreDispatcherPriority.Normal,
-                () =>
-                {
-                    CanPlay = true;
-                });
+            //if (Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow != null
+            //&& Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.HasThreadAccess == true)
+            //    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
+            //    CoreDispatcherPriority.Normal,
+            //    () =>
+            //    {
+            //        CanPlay = true;
+            //    });
         }
 
         private void InitMediaPlayer()
@@ -670,12 +673,14 @@ namespace ReadMyNotifications.ViewModels
                 _mediaPlaybackList = new MediaPlaybackList();
                 _mediaPlayer.Source = _mediaPlaybackList;
                 //_mediaPlayer.MediaEnded -= MediaPlayerOnMediaEnded;
+                _mediaPlayer.MediaOpened += MediaPlayerOnMediaOpened;
                 _mediaPlayer.MediaEnded += MediaPlayerOnMediaEnded;
                 _mediaPlayer.MediaFailed +=
                     (sender, args) => Debug.WriteLine($"media failed: {args.Error} - {args.ErrorMessage}");
-                _mediaPlayer.CommandManager.IsEnabled = false;
+//                _mediaPlayer.CommandManager.IsEnabled = false;
                 _mediaPlayer.AutoPlay = true;
 
+#if SMTC
                 // configurar STMC
                 _smtc = _mediaPlayer.SystemMediaTransportControls;
                 _smtc.ButtonPressed += SMTC_ButtonPressed;
@@ -686,6 +691,38 @@ namespace ReadMyNotifications.ViewModels
                 _smtc.IsPlayEnabled = true;
                 _smtc.IsNextEnabled = true;
                 _smtc.IsPreviousEnabled = true;
+#endif
+            }
+        }
+
+        private void MediaPlayerOnMediaOpened(MediaPlayer sender, object args)
+        {
+            Debug.Write("MediaPlayerOnMediaOpened");
+            sender.PlaybackSession.PlaybackStateChanged -= PlaybackSessionOnPlaybackStateChanged;
+            sender.PlaybackSession.PlaybackStateChanged += PlaybackSessionOnPlaybackStateChanged;
+        }
+
+        private async void PlaybackSessionOnPlaybackStateChanged(MediaPlaybackSession sender, object args)
+        {
+            Debug.WriteLine($"PlaybackSessionOnPlaybackStateChanged: {sender.PlaybackState}");
+            switch (sender.PlaybackState)
+            {
+                case MediaPlaybackState.Playing:
+                    await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
+                        CoreDispatcherPriority.Normal,
+                        () =>
+                        {
+                            CanPlay = false;
+                        });
+                    break;
+                default:
+                    await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
+                        CoreDispatcherPriority.Normal,
+                        () =>
+                        {
+                            CanPlay = true;
+                        });
+                    break;
             }
         }
 
@@ -698,7 +735,13 @@ namespace ReadMyNotifications.ViewModels
             var props = mediaPlaybackItem.GetDisplayProperties();
             props.MusicProperties.Title = n.AppName + " " + n.Title;
             props.MusicProperties.Artist = _l.GetString("AppTitle");
+            mediaPlaybackItem.ApplyDisplayProperties(props);
             _mediaPlaybackList.Items.Add(mediaPlaybackItem);
+            if (_mediaPlayer.PlaybackSession.PlaybackState != MediaPlaybackState.Playing)
+            {
+                _mediaPlaybackList.MoveTo((uint) _mediaPlaybackList.Items.Count - 1);
+                _mediaPlayer.Play();
+            }
         }
 
         public bool IsSMTCMuted()
@@ -829,6 +872,7 @@ namespace ReadMyNotifications.ViewModels
             ToastNotificationManager.CreateToastNotifier().Show(toast);
         }
 
+#if SMTC
         private void SMTC_ButtonPressed(SystemMediaTransportControls sender, SystemMediaTransportControlsButtonPressedEventArgs args)
         {
             Debug.WriteLine("SMTC: button pressed");
@@ -868,12 +912,28 @@ namespace ReadMyNotifications.ViewModels
                 _smtc.IsPreviousEnabled = true;
             _mediaPlaybackList.MoveTo((uint) pos);
         }
+#endif
 
         private void MediaPlayerOnMediaEnded(MediaPlayer sender, object args)
         {
             Debug.WriteLine("MediaElementOnMediaEnded");
 
-            StopMediaPlayer();
+#if SMTC
+            // veamos si quedan elementos en la cola
+            if (_mediaPlaybackList.CurrentItemIndex < _mediaPlaybackList.Items.Count - 1)
+            {
+                // todavia hay items
+                _mediaPlayer.AutoPlay = true;
+                SaltaTrack(1);
+            }
+            else
+            {
+                _mediaPlayer.AutoPlay = false;
+                _mediaPlayer.Pause();
+                _mediaPlayer.PlaybackSession.Position = TimeSpan.Zero;
+            }
+#endif
+//            StopMediaPlayer();
         }
     }
 }
