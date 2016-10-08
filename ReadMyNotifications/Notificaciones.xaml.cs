@@ -51,8 +51,8 @@ namespace ReadMyNotifications
                 var notif = e.AddedItems[0] as Notificacion;
                 if (notif != null)
                 {
-                    //App.ViewModel.StopMediaPlayer();
                     await App.ViewModel.ReadNotification(notif);
+                    App.ViewModel.Play();
                 }
             }
             catch (Exception ex)
@@ -65,7 +65,9 @@ namespace ReadMyNotifications
         private async void Read_OnClick(object sender, RoutedEventArgs e)
         {
             //await App.ViewModel.ReadNotifications(MainViewModel.ReadType.ReadAll);
+            App.ViewModel.StopMediaPlayer();
             await App.ViewModel.ReadAllNotifications();
+            App.ViewModel.Play();
         }
 
         private void Stop_OnClick(object sender, RoutedEventArgs e)

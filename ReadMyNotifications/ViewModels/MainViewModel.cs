@@ -514,7 +514,7 @@ namespace ReadMyNotifications.ViewModels
                 }
             }
 
-            return lista;
+            return lista.OrderByDescending(f => f.CreationTime).ToList();
         }
 
         private Mutex _mutex = new Mutex();
@@ -564,7 +564,6 @@ namespace ReadMyNotifications.ViewModels
         public async Task ReadAllNotifications()
         {
             Debug.WriteLine("ReadAllNotifications: begin");
-            StopMediaPlayer();
             var notifs = await GetNotifications(true);
             foreach (var n in notifs)
             {
@@ -631,6 +630,11 @@ namespace ReadMyNotifications.ViewModels
             AddTrack(n, stream);
         }
 
+        public void Play()
+        {
+            _mediaPlayer.Play();
+        }
+
         private bool _playing = false;
 
         public bool CanPlay
@@ -650,10 +654,14 @@ namespace ReadMyNotifications.ViewModels
             //    return;
             //}
 
+            _mediaPlaybackList = new MediaPlaybackList();
             if (_mediaPlayer != null)
+            {
                 _mediaPlayer.Pause();
-            if (_mediaPlaybackList != null && _mediaPlaybackList.Items != null)
-                _mediaPlaybackList.Items.Clear();
+                _mediaPlayer.Source = _mediaPlaybackList;
+            }
+            //if (_mediaPlaybackList != null && _mediaPlaybackList.Items != null)
+            //    _mediaPlaybackList.Items.Clear();
             //if (Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow != null
             //&& Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.HasThreadAccess == true)
             //    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
@@ -678,7 +686,7 @@ namespace ReadMyNotifications.ViewModels
                 _mediaPlayer.MediaFailed +=
                     (sender, args) => Debug.WriteLine($"media failed: {args.Error} - {args.ErrorMessage}");
 //                _mediaPlayer.CommandManager.IsEnabled = false;
-                _mediaPlayer.AutoPlay = true;
+                //_mediaPlayer.AutoPlay = true;
 
 #if SMTC
                 // configurar STMC
@@ -737,11 +745,6 @@ namespace ReadMyNotifications.ViewModels
             props.MusicProperties.Artist = _l.GetString("AppTitle");
             mediaPlaybackItem.ApplyDisplayProperties(props);
             _mediaPlaybackList.Items.Add(mediaPlaybackItem);
-            if (_mediaPlayer.PlaybackSession.PlaybackState != MediaPlaybackState.Playing)
-            {
-                _mediaPlaybackList.MoveTo((uint) _mediaPlaybackList.Items.Count - 1);
-                _mediaPlayer.Play();
-            }
         }
 
         public bool IsSMTCMuted()
@@ -795,6 +798,7 @@ namespace ReadMyNotifications.ViewModels
             return stream;
         }
 
+#if SMTC
         private bool _pausedDueToMute = false;
 
         private void SMTC_PropertyChanged(SystemMediaTransportControls sender, SystemMediaTransportControlsPropertyChangedEventArgs args)
@@ -827,6 +831,7 @@ namespace ReadMyNotifications.ViewModels
                 }
             }
         }
+#endif
 
         public void SendToast()
         {
@@ -916,7 +921,7 @@ namespace ReadMyNotifications.ViewModels
 
         private void MediaPlayerOnMediaEnded(MediaPlayer sender, object args)
         {
-            Debug.WriteLine("MediaElementOnMediaEnded");
+            Debug.WriteLine("MediaPlayerOnMediaEnded");
 
 #if SMTC
             // veamos si quedan elementos en la cola
@@ -933,7 +938,7 @@ namespace ReadMyNotifications.ViewModels
                 _mediaPlayer.PlaybackSession.Position = TimeSpan.Zero;
             }
 #endif
-//            StopMediaPlayer();
+            StopMediaPlayer();
         }
     }
 }
