@@ -94,4 +94,7 @@
   <data name="ToggleSpeaker.Header" xml:space="preserve">
     <value>...cuando estés usando el altavoz</value>
   </data>
+  <data name="ToggleBackground.Header" xml:space="preserve">
+    <value>Lee las notificaciones en el fondo</value>
+  </data>
 </root>

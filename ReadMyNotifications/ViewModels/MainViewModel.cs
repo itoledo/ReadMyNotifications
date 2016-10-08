@@ -561,15 +561,32 @@ namespace ReadMyNotifications.ViewModels
             Debug.WriteLine("FillNotifications: end");
         }
 
-        public async Task ReadAllNotifications()
+        public async Task ReadAllNotifications(bool all = true)
         {
-            Debug.WriteLine("ReadAllNotifications: begin");
-            var notifs = await GetNotifications(true);
-            foreach (var n in notifs)
-            {
-                await ReadNotification(n);
-            }
+            Debug.WriteLine($"ReadAllNotifications: begin: {all}");
+            int cnt = 0;
+            var notifs = await GetNotifications(all);
+            if (notifs != null)
+                foreach (var n in notifs)
+                {
+                    cnt++;
+                    await ReadNotification(n);
+                }
             GuardarNotificaciones(notifs);
+            string msg;
+
+            // si ya hay un mensaje encolado, no pongamos otro por favor...
+            if (_mediaPlaybackList.Items.All(i => i.Source.CustomProperties.ContainsKey("Id")))
+            {
+                if (cnt == 0)
+                    msg = _l.GetString("NoNotifications");
+                else
+                    msg = _l.GetString("ReadEnd");
+
+                var stream = await GenerarSpeech(msg);
+                AddTrack(null, stream);
+            }
+
             Debug.WriteLine("ReadAllNotifications: end");
         }
 
@@ -596,32 +613,10 @@ namespace ReadMyNotifications.ViewModels
             }
         }
 
-        public enum ReadType
-        {
-            ReadAll,
-            ReadNew
-        }
-
         public bool IsNotificationInDb(uint id)
         {
             var existe = _db.Table<NotifId>().FirstOrDefault(z => z.Id == id);
             return existe != null;
-        }
-
-        public async Task ReadNotifications(ReadType read, List<Notificacion> notifs)
-        {
-            int cnt = 0;
-            foreach (var n in notifs)
-            {
-                if (read == ReadType.ReadAll || !IsNotificationInDb(n.Id))
-                    await ReadNotification(n);
-
-                cnt++;
-            }
-            //if (cnt == 0)
-            //    await Speak(_l.GetString("NoNotifications"));
-            //else
-            //    await Speak(_l.GetString("ReadEnd"));
         }
 
         public async Task ReadNotification(Notificacion n)
@@ -736,12 +731,22 @@ namespace ReadMyNotifications.ViewModels
 
         private void AddTrack(Notificacion n, SpeechSynthesisStream stream)
         {
-            Debug.WriteLine($"Añadiendo track para notificación {n.Id} - {n.AppName} - {n.Title}");
+            if (n == null)
+            {
+                Debug.WriteLine($"Añadiendo track informativo");
+            }
+            else
+            {
+                Debug.WriteLine($"Añadiendo track para notificación {n.Id} - {n.AppName} - {n.Title}");
+            }
             var src = MediaSource.CreateFromStream(stream, stream.ContentType);
             var mediaPlaybackItem = new MediaPlaybackItem(src);
-            src.CustomProperties.Add("Id", n.Id);
             var props = mediaPlaybackItem.GetDisplayProperties();
-            props.MusicProperties.Title = n.AppName + " " + n.Title;
+            if (n != null)
+            {
+                src.CustomProperties.Add("Id", n.Id);
+                props.MusicProperties.Title = n.AppName + " " + n.Title;
+            }
             props.MusicProperties.Artist = _l.GetString("AppTitle");
             mediaPlaybackItem.ApplyDisplayProperties(props);
             _mediaPlaybackList.Items.Add(mediaPlaybackItem);

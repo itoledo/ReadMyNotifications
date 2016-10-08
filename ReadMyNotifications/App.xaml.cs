@@ -296,13 +296,9 @@ namespace ReadMyNotifications
                 {
                     case "UserNotificationChanged":
                     case "ToastAction":
-//                        await ViewModel.CheckNewNotifications(
-//#if BACKGROUND_TOAST
-//                            launchedFromToast
-//#else
-//                            false
-//#endif
-//                            );
+                        await ViewModel.FillNotifications();
+                        await ViewModel.ReadAllNotifications(false);
+                        ViewModel.Play();
                         break;
                 }
             }

@@ -115,6 +115,10 @@
           <source>...when speakers are connected</source>
           <target state="translated">...cuando estés usando el altavoz</target>
         </trans-unit>
+        <trans-unit id="ToggleBackground.Header" translate="yes" xml:space="preserve">
+          <source>Read notifications in background</source>
+          <target state="translated">Lee las notificaciones en el fondo</target>
+        </trans-unit>
       </group>
     </body>
   </file>
