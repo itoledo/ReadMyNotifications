@@ -180,6 +180,9 @@
   <data name="SelectToRead" xml:space="preserve">
     <value>Select to read your notifications</value>
   </data>
+  <data name="SendFeedbackText.Text" xml:space="preserve">
+    <value>Send Feedback</value>
+  </data>
   <data name="StopButton.Label" xml:space="preserve">
     <value>Stop</value>
   </data>

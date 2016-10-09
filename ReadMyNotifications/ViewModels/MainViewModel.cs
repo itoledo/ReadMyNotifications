@@ -53,6 +53,8 @@ namespace ReadMyNotifications.ViewModels
         Windows.Storage.ApplicationDataContainer settings = Windows.Storage.ApplicationData.Current.LocalSettings;
         SQLiteConnection _db;
 
+        private SemaphoreSlim _fillNotificationsSemaphoreSlim = new SemaphoreSlim(1);
+        private SemaphoreSlim _initializationSemaphoreSlim = new SemaphoreSlim(1);
 
         public static bool IsPhone
         {
@@ -130,7 +132,7 @@ namespace ReadMyNotifications.ViewModels
                 _defaultVoice = voz;
         }
 
-#region SETTINGS
+        #region SETTINGS
 
         private bool _deteccionAutomatica;
 
@@ -271,50 +273,66 @@ namespace ReadMyNotifications.ViewModels
                 settings.Values["DefaultVoiceId"] = DefaultVoice.Id;
         }
 
-#endregion
+        #endregion
 
         public async Task Init()
         {
-            if (_initialized == true)
-                return;
-
-            _initialized = true;
-
-            if (_l == null)
-                _l = new ResourceLoader();
-
-            InitMediaPlayer();
-
-            switch (await CheckListenerAccess())
+            Debug.WriteLine("Init: Start");
+            try
             {
-                case 0:
-                    await RegisterBackground();
-                    break;
-                case 1:
-                    await new MessageDialog(_l.GetString("NeedsPermission")).ShowAsync();
-                    break;
-                case -1:
-                    var dlg = new MessageDialog(_l.GetString("RetryPermission"));
-                    dlg.Commands.Add(new UICommand(_l.GetString("Retry")));
-                    dlg.Commands.Add(new UICommand(_l.GetString("Cancel")));
-                    bool hecho = false;
-                    while (hecho == false)
-                    {
-                        var ret = await dlg.ShowAsync();
-                        if (ret.Label.Equals(_l.GetString("Retry")))
-                        {
-                            var ok = await CheckListenerAccess();
-                            if (ok == 1)
-                                await new MessageDialog(_l.GetString("NeedsPermission")).ShowAsync();
-                        }
-                        else
-                            hecho = true;
-                    }
-                    break;
-            }
+                Debug.WriteLine("Init: Wait");
+                await _initializationSemaphoreSlim.WaitAsync();
 
-            _detector = new LanguageDetector();
-            await _detector.AddLanguages("es", "en", "de", "fr", "it", "ja", "pt", "zh-cn", "zh-tw");
+                if (_initialized == true)
+                {
+                    Debug.WriteLine("Init: ya inicializados, saliendo");
+                    return;
+                }
+
+                Debug.WriteLine("Init: inicializando");
+                _initialized = true;
+
+                if (_l == null)
+                    _l = new ResourceLoader();
+
+                InitMediaPlayer();
+
+                switch (await CheckListenerAccess())
+                {
+                    case 0:
+                        await RegisterBackground();
+                        break;
+                    case 1:
+                        await new MessageDialog(_l.GetString("NeedsPermission")).ShowAsync();
+                        break;
+                    case -1:
+                        var dlg = new MessageDialog(_l.GetString("RetryPermission"));
+                        dlg.Commands.Add(new UICommand(_l.GetString("Retry")));
+                        dlg.Commands.Add(new UICommand(_l.GetString("Cancel")));
+                        bool hecho = false;
+                        while (hecho == false)
+                        {
+                            var ret = await dlg.ShowAsync();
+                            if (ret.Label.Equals(_l.GetString("Retry")))
+                            {
+                                var ok = await CheckListenerAccess();
+                                if (ok == 1)
+                                    await new MessageDialog(_l.GetString("NeedsPermission")).ShowAsync();
+                            }
+                            else
+                                hecho = true;
+                        }
+                        break;
+                }
+
+                _detector = new LanguageDetector();
+                await _detector.AddLanguages("es", "en", "de", "fr", "it", "ja", "pt", "zh-cn", "zh-tw");
+            }
+            finally
+            {
+                _initializationSemaphoreSlim.Release();
+            }
+            Debug.WriteLine("Init: fin");
         }
 
         public async Task<int> CheckListenerAccess()
@@ -359,7 +377,15 @@ namespace ReadMyNotifications.ViewModels
             BackgroundExecutionManager.RemoveAccess();
 
             if (LeerEnBackground == false)
+            {
+                // quitemos el task
+                var task = (from t in BackgroundTaskRegistration.AllTasks
+                    where t.Value.Name.Equals("UserNotificationChanged")
+                    select t.Value).FirstOrDefault();
+                if (task != null)
+                    task.Unregister(false);
                 return;
+            }
 
             await BackgroundExecutionManager.RequestAccessAsync();
 
@@ -517,15 +543,13 @@ namespace ReadMyNotifications.ViewModels
             return lista.OrderByDescending(f => f.CreationTime).ToList();
         }
 
-        private Mutex _mutex = new Mutex();
-
         // notificaciones que se van a mostrar en pantalla
         public async Task FillNotifications()
         {
             try
             {
                 Debug.WriteLine("FillNotifications: wait");
-                _mutex.WaitOne();
+                await _fillNotificationsSemaphoreSlim.WaitAsync();
                 Debug.WriteLine("FillNotifications: start");
                 Getting = true;
 
@@ -556,12 +580,28 @@ namespace ReadMyNotifications.ViewModels
             }
             finally
             {
-                _mutex.ReleaseMutex();
+                _fillNotificationsSemaphoreSlim.Release();
             }
             Debug.WriteLine("FillNotifications: end");
         }
 
-        public async Task ReadAllNotifications(bool all = true)
+        private TaskCompletionSource<object> _taskMediaEnded;
+
+        public void PrepareForMediaEnded()
+        {
+            // esperaremos hasta que termine el mediaplayer
+            _taskMediaEnded = new TaskCompletionSource<object>();
+        }
+
+        public async Task WaitForMediaEnded()
+        {
+            Debug.WriteLine("WaitForMediaEnded: inicio");
+            if (_taskMediaEnded != null)
+                await _taskMediaEnded.Task;
+            Debug.WriteLine("WaitForMediaEnded: fin");
+        }
+
+        public async Task<int> ReadAllNotifications(bool all = true, bool fromBackground = false)
         {
             Debug.WriteLine($"ReadAllNotifications: begin: {all}");
             int cnt = 0;
@@ -576,7 +616,7 @@ namespace ReadMyNotifications.ViewModels
             string msg;
 
             // si ya hay un mensaje encolado, no pongamos otro por favor...
-            if (_mediaPlaybackList.Items.All(i => i.Source.CustomProperties.ContainsKey("Id")))
+            if (fromBackground == false && _mediaPlaybackList.Items.All(i => i.Source.CustomProperties.ContainsKey("Id")))
             {
                 if (cnt == 0)
                     msg = _l.GetString("NoNotifications");
@@ -588,6 +628,7 @@ namespace ReadMyNotifications.ViewModels
             }
 
             Debug.WriteLine("ReadAllNotifications: end");
+            return cnt;
         }
 
         public void GuardarNotificaciones(List<Notificacion> lista)
@@ -641,13 +682,6 @@ namespace ReadMyNotifications.ViewModels
         public void StopMediaPlayer()
         {
             Debug.WriteLine("StopMediaPlayer");
-            //if (Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow == null
-            //    || Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.HasThreadAccess == false)
-            //{
-            //    Debug.WriteLine("modo background, ignorando stop");
-            //    _playing = false;
-            //    return;
-            //}
 
             _mediaPlaybackList = new MediaPlaybackList();
             if (_mediaPlayer != null)
@@ -655,16 +689,12 @@ namespace ReadMyNotifications.ViewModels
                 _mediaPlayer.Pause();
                 _mediaPlayer.Source = _mediaPlaybackList;
             }
-            //if (_mediaPlaybackList != null && _mediaPlaybackList.Items != null)
-            //    _mediaPlaybackList.Items.Clear();
-            //if (Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow != null
-            //&& Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.HasThreadAccess == true)
-            //    Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(
-            //    CoreDispatcherPriority.Normal,
-            //    () =>
-            //    {
-            //        CanPlay = true;
-            //    });
+
+            if (_taskMediaEnded != null)
+            {
+                _taskMediaEnded.TrySetResult(null);
+                _taskMediaEnded = null;
+            }
         }
 
         private void InitMediaPlayer()

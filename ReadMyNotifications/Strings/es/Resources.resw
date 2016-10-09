@@ -97,4 +97,7 @@
   <data name="ToggleBackground.Header" xml:space="preserve">
     <value>Lee las notificaciones en el fondo</value>
   </data>
+  <data name="SendFeedbackText.Text" xml:space="preserve">
+    <value>Enviar Comentarios</value>
+  </data>
 </root>

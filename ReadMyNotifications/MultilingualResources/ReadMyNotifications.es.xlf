@@ -119,6 +119,10 @@
           <source>Read notifications in background</source>
           <target state="translated">Lee las notificaciones en el fondo</target>
         </trans-unit>
+        <trans-unit id="SendFeedbackText.Text" translate="yes" xml:space="preserve">
+          <source>Send Feedback</source>
+          <target state="translated">Enviar Comentarios</target>
+        </trans-unit>
       </group>
     </body>
   </file>

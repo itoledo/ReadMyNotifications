@@ -25,6 +25,15 @@ namespace ReadMyNotifications
         public AcercaDe()
         {
             this.InitializeComponent();
+            if (Microsoft.Services.Store.Engagement.StoreServicesFeedbackLauncher.IsSupported())
+                feedbackButton.Visibility = Visibility.Visible;
+        }
+
+        private async void feedbackButton_Click(object sender, RoutedEventArgs e)
+        {
+            var fl = Microsoft.Services.Store.Engagement.StoreServicesFeedbackLauncher.GetDefault();
+            if (fl != null)
+                await fl.LaunchAsync();
         }
     }
 }

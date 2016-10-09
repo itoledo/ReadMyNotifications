@@ -61,6 +61,8 @@ namespace ReadMyNotifications
             if (e.Parameter != null && e.Parameter.Equals("read"))
             {
                 await App.ViewModel.FillNotifications();
+                await App.ViewModel.ReadAllNotifications(false, false);
+                App.ViewModel.Play();
                 //await App.ViewModel.ReadNotifications(MainViewModel.ReadType.ReadNew);
             }
         }

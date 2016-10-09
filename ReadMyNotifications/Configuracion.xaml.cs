@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -27,6 +28,26 @@ namespace ReadMyNotifications
         {
             this.InitializeComponent();
             this.DataContext = App.ViewModel;
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            App.ViewModel.PropertyChanged += ViewModelOnPropertyChanged;
+        }
+
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            App.ViewModel.PropertyChanged -= ViewModelOnPropertyChanged;
+            base.OnNavigatedFrom(e);
+        }
+
+        private async void ViewModelOnPropertyChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs)
+        {
+            if (propertyChangedEventArgs.PropertyName == "LeerEnBackground")
+            {
+                await App.ViewModel.RegisterBackground();
+            }
         }
     }
 }

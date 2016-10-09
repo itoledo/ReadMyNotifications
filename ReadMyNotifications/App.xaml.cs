@@ -198,7 +198,7 @@ namespace ReadMyNotifications
 
         protected override async void OnBackgroundActivated(BackgroundActivatedEventArgs args)
         {
-            Debug.WriteLine("OnBackgroundActivated");
+            Debug.WriteLine("OnBackgroundActivated: inicio");
             //base.OnBackgroundActivated(args);
 
             var deferral = args.TaskInstance.GetDeferral();
@@ -295,9 +295,17 @@ namespace ReadMyNotifications
                 switch (args.TaskInstance.Task.Name)
                 {
                     case "UserNotificationChanged":
+                        await ViewModel.FillNotifications();
+                        ViewModel.PrepareForMediaEnded();
+                        int cnt = await ViewModel.ReadAllNotifications(false, true);
+                        ViewModel.Play();
+                        if (cnt > 0)
+                            await ViewModel.WaitForMediaEnded();
+                        break;
+
                     case "ToastAction":
                         await ViewModel.FillNotifications();
-                        await ViewModel.ReadAllNotifications(false);
+                        await ViewModel.ReadAllNotifications(false, false);
                         ViewModel.Play();
                         break;
                 }
@@ -310,6 +318,7 @@ namespace ReadMyNotifications
             {
                 deferral.Complete();
             }
+            Debug.WriteLine("OnBackgroundActivated: fin");
         }
     }
 }

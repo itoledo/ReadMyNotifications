@@ -14,7 +14,15 @@
         <HyperlinkButton x:Uid="Webpage" Content="Visit our web page" NavigateUri="http://www.birdie.cl"/>
 
         <HyperlinkButton x:Uid="PleaseReview" Content="Please review this app at the Windows Store!" NavigateUri="ms-windows-store://review/?ProductId=9nblggh525xl"/>
-        
+
         <HyperlinkButton x:Uid="ContactSupport" Content="Contact support" NavigateUri="mailto:soporte@birdie.cl"/>
+        
+        <Button x:Name="feedbackButton" Visibility="Collapsed" Click="feedbackButton_Click">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE939;" VerticalAlignment="Center"/>
+                <TextBlock x:Uid="SendFeedbackText" Margin="10,0,0,0" Text="Send Feedback"/>
+            </StackPanel>
+        </Button>
+
     </StackPanel>
 </Page>
