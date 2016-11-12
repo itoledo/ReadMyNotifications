@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3" IgnorableNamespaces="uap mp uap3">
-  <Identity Name="Birdie.ReadmyNotifications" Publisher="CN=F1E01AF1-F7CB-4CBE-9126-BA9F918938BF" Version="1.2.2.0" />
+  <Identity Name="Birdie.ReadmyNotifications" Publisher="CN=F1E01AF1-F7CB-4CBE-9126-BA9F918938BF" Version="1.2.3.0" />
   <mp:PhoneIdentity PhoneProductId="5afd3494-617d-430d-abcf-ae14cbd9d134" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>Read my Notifications</DisplayName>

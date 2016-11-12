@@ -235,7 +235,7 @@ namespace ReadMyNotifications.ViewModels
                 Debug.WriteLine($"ReadSetting: LeerEnBackground: {LeerEnBackground}");
             }
             else
-                _leerEnBackground = true;
+                _leerEnBackground = false;
 
             if (settings.Values.ContainsKey("LeerSpeaker"))
             {

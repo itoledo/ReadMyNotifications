@@ -2,10 +2,8 @@
     x:Class="ReadMyNotifications.Notificaciones"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:ReadMyNotifications"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:viewModels="using:ReadMyNotifications.ViewModels"
     xmlns:converters="using:MyToolkit.Converters"
     mc:Ignorable="d">
     
@@ -16,16 +14,8 @@
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
-            <!--<RowDefinition Height="Auto"/>-->
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <!--<Button x:Uid="ReadButton" Click="{x:Bind ReadNotifications}" Background="#0e74e6" VerticalAlignment="Top" Margin="20" Width="200">
-            <StackPanel Orientation="Horizontal">
-                <Image Source="Assets/iconReadNotifications.png" Height="62"/>
-                <TextBlock Text="Read Notifications"  VerticalAlignment="Center" Foreground="White" HorizontalAlignment="Center"/>
-            </StackPanel>
-        </Button>-->
-        
         
         <ListView Grid.Row="0" ItemsSource="{Binding ListaNotificaciones}" SelectionChanged="Lista_OnSelectionChanged">
             <ListView.ItemTemplate>
@@ -45,6 +35,17 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+
+        <StackPanel Orientation="Vertical"
+                    Grid.Row="0"
+                    Margin="12"
+                    Visibility="{Binding Getting, Converter={StaticResource NotConverter}}"
+                    VerticalAlignment="Top">
+            <TextBlock x:Uid="ListaVacia"
+                   Text="No notifications found."
+                   Visibility="{Binding ListaNotificaciones.Count, Converter={StaticResource NotConverter}}"
+                   />
+        </StackPanel>
         
         <ProgressRing Width="100" Height="100" HorizontalAlignment="Center" VerticalAlignment="Center" IsActive="{Binding Getting}" />
         

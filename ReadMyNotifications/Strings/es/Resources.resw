@@ -100,4 +100,7 @@
   <data name="SendFeedbackText.Text" xml:space="preserve">
     <value>Enviar Comentarios</value>
   </data>
+  <data name="ListaVacia.Text" xml:space="preserve">
+    <value>No hay notificaciones.</value>
+  </data>
 </root>

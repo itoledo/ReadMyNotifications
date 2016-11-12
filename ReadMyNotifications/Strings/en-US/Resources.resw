@@ -144,6 +144,9 @@
   <data name="From" xml:space="preserve">
     <value>From</value>
   </data>
+  <data name="ListaVacia.Text" xml:space="preserve">
+    <value>No notifications found.</value>
+  </data>
   <data name="MissingLanguage" xml:space="preserve">
     <value>No voice installed for language {0}, please install!</value>
   </data>

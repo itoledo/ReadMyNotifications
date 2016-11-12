@@ -123,6 +123,10 @@
           <source>Send Feedback</source>
           <target state="translated">Enviar Comentarios</target>
         </trans-unit>
+        <trans-unit id="ListaVacia.Text" translate="yes" xml:space="preserve">
+          <source>No notifications found.</source>
+          <target state="translated">No hay notificaciones.</target>
+        </trans-unit>
       </group>
     </body>
   </file>
