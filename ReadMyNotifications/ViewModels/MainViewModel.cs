@@ -80,10 +80,19 @@ namespace ReadMyNotifications.ViewModels
             public uint Id { get; set; }
         }
 
+        public class AppId
+        {
+            [PrimaryKey]
+            public string Id { get; set; }
+
+            public string Name { get; set; }
+        }
+
         public MainViewModel()
         {
             _db = new SQLiteConnection("notifications.db3");
             _db.CreateTable<NotifId>();
+            _db.CreateTable<AppId>();
 
             AllVoices = new ObservableCollection<VoiceInformation>();
             try
@@ -485,6 +494,17 @@ namespace ReadMyNotifications.ViewModels
                     // Get the app's display name
                     string appDisplayName = notif.AppInfo.DisplayInfo.DisplayName;
                     n.AppName = appDisplayName;
+
+                    var existe = _db.Table<AppId>().FirstOrDefault(z => z.Id == notif.AppInfo.Id);
+                    if (existe == null)
+                    {
+                        _db.Insert(new AppId()
+                        {
+                            Id = notif.AppInfo.Id,
+                            Name = notif.AppInfo.DisplayInfo.DisplayName
+                        });
+                    }
+
 
                     //// Get the app's logo
                     try
