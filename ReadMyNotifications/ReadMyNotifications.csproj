@@ -114,6 +114,7 @@
     <None Include="ReadMyNotifications_StoreKey.pfx" />
     <None Include="ReadMyNotifications_TemporaryKey.pfx" />
     <None Include="Service References\HockeyApp\ConnectedService.json" />
+    <PRIResource Include="Strings\de\Resources.resw" />
     <PRIResource Include="Strings\es\Resources.resw" />
     <PRIResource Include="Strings\en-US\Resources.resw" />
   </ItemGroup>
@@ -183,6 +184,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <XliffResource Include="MultilingualResources\ReadMyNotifications.de.xlf" />
     <XliffResource Include="MultilingualResources\ReadMyNotifications.es.xlf" />
   </ItemGroup>
   <ItemGroup>

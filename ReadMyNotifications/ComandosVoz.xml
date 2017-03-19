@@ -46,10 +46,11 @@
 
   <CommandSet xml:lang="de-DE">
     <AppName> Benachrichtigungen </AppName>
-    <Example> Lesen Sie meine Benachrichtigungen </Example>
+    <Example> Lies meine Benachrichtigungen </Example>
 
     <Command Name="Read">
-      <Example> Lesen Sie meine Benachrichtigungen </Example>
+      <Example> Lies Sie meine Benachrichtigungen </Example>
+      <ListenFor RequireAppName="ExplicitlySpecified"> lies meine {builtin:AppName} </ListenFor>
       <ListenFor RequireAppName="ExplicitlySpecified"> lesen sie meine {builtin:AppName} </ListenFor>
       <ListenFor RequireAppName="ExplicitlySpecified"> lasen mein {builtin:AppName} </ListenFor>
       <ListenFor RequireAppName="ExplicitlySpecified"> lesen sie mein {builtin:AppName} </ListenFor>
