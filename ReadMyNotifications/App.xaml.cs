@@ -19,6 +19,9 @@ using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
+using Microsoft.Azure.Mobile;
+using Microsoft.Azure.Mobile.Analytics;
+using Microsoft.Azure.Mobile.Crashes;
 using Microsoft.HockeyApp;
 using Microsoft.QueryStringDotNET;
 using ReadMyNotifications.Utils;
@@ -40,6 +43,7 @@ namespace ReadMyNotifications
         public App()
         {
             this.InitializeComponent();
+            MobileCenter.Start("75efdbee-c8e0-422f-bfc5-1715ff0a5396", typeof(Analytics), typeof(Crashes));
             this.Suspending += OnSuspending;
             ViewModel = new MainViewModel();
             Microsoft.HockeyApp.HockeyClient.Current.Configure("1b73ec47435844f3b00c28e67b048c75");
