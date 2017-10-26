@@ -1,1 +1,1 @@
-c:\devel\git\ReadMyNotifications\ReadMyNotifications\AppPackages\ReadMyNotifications_1.2.2.0\ReadMyNotifications_1.2.2.0_x86_x64_arm.appxbundle
+C:\devel\git\ReadMyNotifications\ReadMyNotifications\bin\ARM\Release\Upload\ReadMyNotifications_1.2.4.0\ReadMyNotifications_1.2.4.0_x86_x64_arm.appxbundle
